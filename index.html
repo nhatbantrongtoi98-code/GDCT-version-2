@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#7f1d1d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg">
+    <title>Sổ tay Giáo dục Chính trị - LLVT Thủ đô</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --military-red: #c41e16; 
+            --military-gold: #ffde00;
+            --military-deep: #7f1d1d;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        
+        .trong-dong-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1200px;
+            height: 1200px;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b2/Dong_Son_drum_surface.svg');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .vpa-hero-bg {
+            background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .vpa-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.5);
+            width: 100%;
+            height: 100%;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg');
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.04;
+            pointer-events: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--military-red); }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .vpa-float { animation: float 6s ease-in-out infinite; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .gold-glow {
+            filter: drop-shadow(0 0 15px rgba(255, 222, 0, 0.3));
+        }
+
+        .btn-military {
+            background: linear-gradient(to bottom, #c41e16, #991b1b);
+            border-bottom: 4px solid #7f1d1d;
+            transition: all 0.2s ease;
+        }
+        .btn-military:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .ai-chat-gradient {
+            background: linear-gradient(135deg, #7f1d1d 0%, #c41e16 100%);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "qrcode.react": "https://esm.sh/qrcode.react@^4.2.0"
+  }
+}
+</script>
+</head>
+<body class="custom-scrollbar">
+    <div class="trong-dong-overlay"></div>
+    <div id="root"></div>
+    <script>
+        /**
+         * Chuyên gia CNTT: Đăng ký Service Worker an toàn.
+         * Sửa lỗi URL construction bằng cách sử dụng path đơn giản.
+         */
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Chỉ đăng ký nếu đang ở môi trường HTTPS hoặc localhost
+                const isLocalhost = Boolean(
+                    window.location.hostname === 'localhost' ||
+                    window.location.hostname === '[::1]' ||
+                    window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+                );
+
+                if (window.location.protocol === 'https:' || isLocalhost) {
+                    navigator.serviceWorker.register('sw.js', { scope: './' })
+                        .then(registration => {
+                            console.log('Hệ thống: Service Worker đã được kích hoạt thành công.');
+                        })
+                        .catch(error => {
+                            // Bỏ qua lỗi trong môi trường sandbox/preview của AI Studio
+                            if (error.name !== 'SecurityError') {
+                                console.warn('Hệ thống: Đăng ký Service Worker thất bại:', error);
+                            }
+                        });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

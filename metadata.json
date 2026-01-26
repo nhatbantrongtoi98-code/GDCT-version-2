@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Hệ thống Sổ tay Giáo dục Chính trị v6.0",
+  "description": "Nền tảng ôn tập nội dung chính trị, lịch sử quân sự chuyên nghiệp dành cho LLVT Thủ đô với khả năng tùy biến cao và giao diện đậm chất truyền thống Việt Nam.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

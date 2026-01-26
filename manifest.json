@@ -1,0 +1,24 @@
+
+{
+  "name": "Sổ tay Giáo dục Chính trị LLVT Thủ đô",
+  "short_name": "Sổ tay Chính trị",
+  "description": "Nền tảng giáo dục chính trị điện tử cho cán bộ chiến sĩ.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#7f1d1d",
+  "theme_color": "#7f1d1d",
+  "icons": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
