@@ -1074,12 +1074,25 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
     </div>
   );
 };
+// ... Giữ nguyên phần GameView đồ sộ của đồng chí ở phía trên ...
+
 const App: React.FC = () => {
+  // Thiết lập dữ liệu mẫu để GameView có thể hoạt động ngay
+  const sampleData = { courses: [], tests: [], statistics: {} };
+  
   return (
-    <div className="min-h-screen">
-      {/* Gọi GameView vào đây hoặc thiết lập Router tại đây */}
-      <GameView data={...} isAdmin={...} />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-slate-50">
+        <Routes>
+          {/* Đường dẫn chính vào thẳng Hệ thống Ôn tập Chiến sĩ Thông thái */}
+          <Route path="/" element={<GameView data={sampleData as any} isAdmin={true} />} />
+          
+          {/* Đồng chí có thể thêm các Route khác cho Bài giảng, Karaoke tại đây */}
+        </Routes>
+      </div>
+    </Router>
   );
 };
+
+export default App;
 export default App;
