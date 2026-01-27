@@ -391,7 +391,7 @@ const AuthScreen: React.FC<{ data: AppData; onLogin: (user: UserAccount) => void
       </div>
     </Router>
   );
-};
+;
 
 // --- HOME VIEW ---
 const HomeView: React.FC<{ 
