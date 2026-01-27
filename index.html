@@ -97,51 +97,6 @@
             background: linear-gradient(135deg, #7f1d1d 0%, #c41e16 100%);
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "qrcode.react": "https://esm.sh/qrcode.react@^4.2.0"
-  }
-}
-</script>
-</head>
-<body class="custom-scrollbar">
-    <div class="trong-dong-overlay"></div>
-    <div id="root"></div>
-    <script>
-        /**
-         * Chuyên gia CNTT: Đăng ký Service Worker an toàn.
-         * Sửa lỗi URL construction bằng cách sử dụng path đơn giản.
-         */
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                // Chỉ đăng ký nếu đang ở môi trường HTTPS hoặc localhost
-                const isLocalhost = Boolean(
-                    window.location.hostname === 'localhost' ||
-                    window.location.hostname === '[::1]' ||
-                    window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
-                );
-
-                if (window.location.protocol === 'https:' || isLocalhost) {
-                    navigator.serviceWorker.register('sw.js', { scope: './' })
-                        .then(registration => {
-                            console.log('Hệ thống: Service Worker đã được kích hoạt thành công.');
-                        })
-                        .catch(error => {
-                            // Bỏ qua lỗi trong môi trường sandbox/preview của AI Studio
-                            if (error.name !== 'SecurityError') {
-                                console.warn('Hệ thống: Đăng ký Service Worker thất bại:', error);
-                            }
-                        });
-                }
-            });
-        }
-    </script>
+<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
