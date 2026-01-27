@@ -291,16 +291,6 @@ const AuthScreen: React.FC<{ data: AppData; onLogin: (user: UserAccount) => void
 };
 
 // --- MAIN APP ---
-const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
-    try {
-      const saved = localStorage.getItem('military_current_user_v7');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-
   const [appData, setAppData] = useState<AppData>(() => {
     try {
       const saved = localStorage.getItem('military_app_data_v7');
