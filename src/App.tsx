@@ -1064,7 +1064,6 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
     </div>
   );
 };
-// ... Giữ nguyên phần GameView đồ sộ của đồng chí ở phía trên ...
 
 // --- COMPONENT APP CHÍNH ---
 const App: React.FC = () => {
