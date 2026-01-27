@@ -367,7 +367,9 @@ const AuthScreen: React.FC<{ data: AppData; onLogin: (user: UserAccount) => void
       lectures: { ...prev.lectures, [cat]: prev.lectures[cat].map(l => l.id === id ? { ...l, title, posterUrl: poster } : l) }
     }));
   };
-
+const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [appData, setAppData] = useState<AppData>(sampleData);
   if (!currentUser) return <AuthScreen data={appData} onLogin={setCurrentUser} />;
 
   return (
