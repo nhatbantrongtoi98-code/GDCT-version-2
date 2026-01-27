@@ -1101,5 +1101,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-// Đảm bảo sau dòng này KHÔNG còn bất kỳ mã nào khác (đặc biệt là ReactDOM)
-export default App;
