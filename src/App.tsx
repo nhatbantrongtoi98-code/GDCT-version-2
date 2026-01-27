@@ -1073,7 +1073,7 @@ const App: React.FC = () => {
     tests: [],
     statistics: { totalStudyTime: 0, completedLessons: 0, averageScore: 0 }
   };
-  
+  //
   return (
     <Router>
       <div className="min-h-screen bg-slate-50">
