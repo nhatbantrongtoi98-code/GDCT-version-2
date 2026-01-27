@@ -1076,18 +1076,24 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
 };
 // ... Giữ nguyên phần GameView đồ sộ của đồng chí ở phía trên ...
 
+// --- COMPONENT APP CHÍNH ---
 const App: React.FC = () => {
-  // Thiết lập dữ liệu mẫu để GameView có thể hoạt động ngay
-  const sampleData = { courses: [], tests: [], statistics: {} };
+  // Tạo dữ liệu mẫu để GameView không bị trống
+  const sampleData: AppData = {
+    courses: [],
+    tests: [],
+    statistics: { totalStudyTime: 0, completedLessons: 0, averageScore: 0 }
+  };
   
   return (
     <Router>
       <div className="min-h-screen bg-slate-50">
         <Routes>
-          {/* Đường dẫn chính vào thẳng Hệ thống Ôn tập Chiến sĩ Thông thái */}
-          <Route path="/" element={<GameView data={sampleData as any} isAdmin={true} />} />
+          {/* Đường dẫn chính hiển thị Hệ thống Ôn tập */}
+          <Route path="/" element={<GameView data={sampleData} isAdmin={true} />} />
           
-          {/* Đồng chí có thể thêm các Route khác cho Bài giảng, Karaoke tại đây */}
+          {/* Nếu sau này đồng chí thêm trang chủ, hãy đổi path thành "/game" */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
@@ -1095,4 +1101,5 @@ const App: React.FC = () => {
 };
 
 export default App;
+// Đảm bảo sau dòng này KHÔNG còn bất kỳ mã nào khác (đặc biệt là ReactDOM)
 export default App;
