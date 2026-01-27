@@ -1074,5 +1074,12 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
     </div>
   );
 };
-
+const App: React.FC = () => {
+  return (
+    <div className="min-h-screen">
+      {/* Gọi GameView vào đây hoặc thiết lập Router tại đây */}
+      <GameView data={...} isAdmin={...} />
+    </div>
+  );
+};
 export default App;
