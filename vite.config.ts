@@ -15,11 +15,12 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
-      resolve: {
-        alias: {
-          '@': path.resolve(process.cwd(), '.'),
-        }
-      },
+     resolve: {
+  alias: {
+    // Ép Vite hiểu dấu @ hoặc gốc là thư mục hiện tại
+    '@': path.resolve(process.cwd(), './'),
+  }
+},
       build: {
         outDir: 'dist',
         assetsDir: 'assets',
