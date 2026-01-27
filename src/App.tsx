@@ -1075,7 +1075,6 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
   );
 };
 
-export default App;
 import ReactDOM from 'react-dom/client';
 
 // Đoạn code này là "ngòi nổ" để đưa giao diện vào thẻ #root
@@ -1087,3 +1086,4 @@ if (rootElement) {
         </React.StrictMode>
     );
 }
+export default App;
