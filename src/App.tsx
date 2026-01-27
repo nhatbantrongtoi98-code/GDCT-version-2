@@ -371,7 +371,6 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [appData, setAppData] = useState<AppData>(sampleData);
   if (!currentUser) return <AuthScreen data={appData} onLogin={setCurrentUser} />;
-
   return (
     <Router>
       <div style={{ backgroundImage: `url(${appData.globalBackground})`, backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center' }} className="min-h-screen transition-all duration-1000">
@@ -1091,4 +1090,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default App;//
