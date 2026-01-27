@@ -403,75 +403,91 @@ const App: React.FC = () => {
 };
 
 // --- HOME VIEW ---
-const HomeView: React.FC<{ data: AppData; isAdmin: boolean; onUpdate: (key: keyof AppData, t: string, c: string, i?: string, a?: string) => void; onUpdateGlobal: (k: keyof AppData, v: any) => void; onUpdatePlaylist: (l: BackgroundMusic[]) => void }> = ({ data, isAdmin, onUpdate, onUpdateGlobal, onUpdatePlaylist }) => {
+const HomeView: React.FC<{ 
+  data: AppData; 
+  isAdmin: boolean; 
+  onUpdate: (key: keyof AppData, t: string, c: string, i?: string, a?: string) => void; 
+  onUpdateGlobal: (k: keyof AppData, v: any) => void; 
+  onUpdatePlaylist: (l: BackgroundMusic[]) => void 
+}> = ({ data, isAdmin, onUpdate, onUpdateGlobal, onUpdatePlaylist }) => {
   const [isEditingGlobal, setIsEditingGlobal] = useState(false);
   const audioInputRef = useRef<HTMLInputElement>(null);
-const handleImageUpload = async (key: keyof AppData, e: React.ChangeEvent<HTMLInputElement>) => {
-  if (!isAdmin) return;
-  const file = e.target.files?.[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Data = event.target?.result as string;
-      const mediaId = `img_${key}_${Date.now()}`; // Tạo ID duy nhất
-      
-      try {
-        await saveMedia(mediaId, base64Data); // Lưu vào IndexedDB
-        onUpdateGlobal(key, mediaId); // Chỉ lưu ID vào AppData (localStorage)
-      } catch (err) {
-        alert("Lỗi lưu trữ dữ liệu hình ảnh.");
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-};
-  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file && isAdmin) {
-    // Giờ đây đồng chí có thể tăng giới hạn lên 50MB-100MB thoải mái!
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Data = event.target?.result as string;
-      const mediaId = `audio_${Date.now()}`;
-      
-      await saveMedia(mediaId, base64Data);
-      const title = file.name.split('.').slice(0, -1).join('.');
-      onUpdatePlaylist([...data.backgroundPlaylist, { title, url: mediaId }]); // Lưu ID vào playlist
-    };
-    reader.readAsDataURL(file);
-  }
-};
+
+  // Xử lý Upload Ảnh (Gọn nhẹ)
+  const handleImageUpload = (key: keyof AppData, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isAdmin) return;
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1.5 * 1024 * 1024) { // 1.5MB limit cho ảnh
-         alert("Đồng chí vui lòng chọn ảnh có kích thước dưới 1.5MB để đảm bảo hệ thống vận hành ổn định.");
-         return;
-      }
+    if (file && file.size <= 1.5 * 1024 * 1024) {
       const reader = new FileReader();
-      reader.onload = (event) => onUpdateGlobal(key, event.target?.result as string);
+      reader.onload = (ev) => onUpdateGlobal(key, ev.target?.result as string);
       reader.readAsDataURL(file);
+    } else {
+      alert("Ảnh quá lớn (tối đa 1.5MB)");
     }
   };
 
+  // Xử lý Upload Nhạc (Gọn nhẹ)
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isAdmin) return;
     const file = e.target.files?.[0];
-    if (file && isAdmin) {
-      // KIỂM TRA KÍCH THƯỚC: Giới hạn 2MB cho tệp âm thanh vì localStorage tối đa ~5MB
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Tệp nhạc quá lớn (Vượt quá 2MB). Đồng chí vui lòng chọn tệp nhạc ngắn hơn hoặc có chất lượng nén cao hơn để tránh làm treo hệ thống.");
-        return;
-      }
-      
+    if (file && file.size <= 2 * 1024 * 1024) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const title = file.name.split('.').slice(0, -1).join('.'); 
-        const url = event.target?.result as string;
-        onUpdatePlaylist([...data.backgroundPlaylist, { title, url }]);
+      reader.onload = (ev) => {
+        const title = file.name.split('.').slice(0, -1).join('.');
+        onUpdatePlaylist([...data.backgroundPlaylist, { title, url: ev.target?.result as string }]);
       };
       reader.readAsDataURL(file);
+    } else {
+      alert("File nhạc quá lớn (tối đa 2MB)");
     }
   };
+
+  return (
+    <div className="space-y-12 p-4">
+      {/* Banner Tiêu đề */}
+      <div className="bg-red-800 p-10 rounded-[2rem] text-white shadow-xl">
+        <h2 className="text-4xl font-black uppercase italic">{data.appName}</h2>
+        <p className="mt-2 opacity-90">Hệ thống giáo dục chính trị điện tử</p>
+      </div>
+
+      {/* Phần giới thiệu có thể chỉnh sửa */}
+      <EditableSection 
+        isAdmin={isAdmin} 
+        title={data.intro.title} 
+        content={data.intro.body} 
+        imageUrl={data.intro.imageUrl} 
+        onSave={(t, c, i, a) => onUpdate('intro', t, c, i, a)} 
+      />
+
+      {/* Nút cấu hình dành cho Admin */}
+      {isAdmin && (
+        <div className="bg-white p-8 rounded-[2rem] border shadow-lg">
+          <button 
+            onClick={() => setIsEditingGlobal(!isEditingGlobal)}
+            className="bg-slate-100 px-6 py-3 rounded-xl font-bold flex items-center gap-2"
+          >
+            {isEditingGlobal ? <X size={20}/> : <Edit2 size={20}/>} TÙY CHỈNH HỆ THỐNG
+          </button>
+
+          {isEditingGlobal && (
+            <div className="mt-6 grid gap-6 animate-in fade-in">
+              <input 
+                className="p-4 border rounded-xl w-full" 
+                value={data.appName} 
+                onChange={(e) => onUpdateGlobal('appName', e.target.value)}
+                placeholder="Tên ứng dụng..."
+              />
+              <div className="bg-slate-50 p-6 rounded-xl">
+                <p className="font-bold mb-2">Thêm nhạc nền (MP3/WAV < 2MB)</p>
+                <input type="file" accept="audio/*" onChange={handleAudioUpload} className="text-xs" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
   const handleDeleteTrack = (index: number) => {
     if (confirm("Đồng chí có chắc muốn xóa bản nhạc này khỏi danh sách phát hệ thống?")) {
