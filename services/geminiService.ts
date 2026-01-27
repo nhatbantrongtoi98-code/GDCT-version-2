@@ -1,29 +1,35 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/genai";
 
-// Khởi tạo SDK chuẩn
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const getApiKey = () => import.meta.env.VITE_GEMINI_API_KEY || "";
+
+// Hàm khởi tạo Model dùng chung để tránh lặp code và lỗi Reference
+const getGeminiModel = (config?: any) => {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+  
+  const genAI = new GoogleGenerativeAI(apiKey);
+  return genAI.getGenerativeModel({ model: "gemini-1.5-flash", ...config });
+};
 
 export async function askWiseSoldier(question: string) {
   try {
-    // Phải lấy model qua hàm getGenerativeModel
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = getGeminiModel();
+    if (!model) return "Chưa cấu hình API Key.";
 
     const result = await model.generateContent(
       `Bạn là một trợ lý ảo thông thái dành cho chiến sĩ quân đội Việt Nam. Hãy trả lời câu hỏi sau một cách trang trọng, chính xác và dễ hiểu: ${question}`
     );
-    
     const response = await result.response;
-    return response.text() || "Xin lỗi, tôi chưa tìm được câu trả lời phù hợp.";
+    return response.text() || "Không có phản hồi.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "Có lỗi xảy ra khi kết nối với trí tuệ nhân tạo.";
+    return "Lỗi kết nối AI.";
   }
 }
 
-export async function generateQuiz(topic: string = "lịch sử quân đội và giáo dục chính trị") {
+export async function generateQuiz(topic: string = "lịch sử quân đội") {
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+    const model = getGeminiModel({
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -42,15 +48,14 @@ export async function generateQuiz(topic: string = "lịch sử quân đội và
       }
     });
 
-    const prompt = `Tạo 5 câu hỏi trắc nghiệm ôn tập về chủ đề: ${topic}. 
-      Yêu cầu nội dung sát với chương trình giáo dục chính trị cho chiến sĩ quân đội Việt Nam. 
-      Cung cấp thêm giải thích ngắn gọn cho đáp án đúng.`;
+    if (!model) return [];
 
+    const prompt = `Tạo 5 câu hỏi trắc nghiệm tiếng Việt về: ${topic}. Nội dung chuẩn xác quân đội.`;
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return JSON.parse(response.text());
+    const text = result.response.text();
+    return JSON.parse(text);
   } catch (error) {
-    console.error("Quiz Generation Error:", error);
+    console.error("Quiz Error:", error);
     return [];
   }
 }
