@@ -1074,4 +1074,5 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
     </div>
   );
 };
+
 export default App;
