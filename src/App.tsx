@@ -1074,16 +1074,4 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
     </div>
   );
 };
-
-import ReactDOM from 'react-dom/client';
-
-// Đoạn code này là "ngòi nổ" để đưa giao diện vào thẻ #root
-const rootElement = document.getElementById('root');
-if (rootElement) {
-    ReactDOM.createRoot(rootElement).render(
-        <React.StrictMode>
-            <App />
-        </React.StrictMode>
-    );
-}
 export default App;
