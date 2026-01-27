@@ -1,15 +1,29 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Khuyên dùng HashRouter cho Vercel
+import { QRCodeSVG } from 'qrcode.react';
 import Layout from './components/Layout';
 import EditableSection from './components/EditableSection';
 import AIAssistant from './components/AIAssistant';
+// Nếu đồng chí viết tất cả trong 1 file App.tsx thì hãy đảm bảo các hàm 
+// HomeView, HistoryVNView... được định nghĩa TRƯỚC khi gọi trong Routes.
+import HomeView from './views/HomeView'; 
+import HistoryVNView from './views/HistoryVNView';
+import TraditionView from './views/TraditionView';
+import LecturesView from './views/LecturesView';
+import EntertainmentView from './views/EntertainmentView';
+import GameView from './views/GameView';
+import SettingsView from './views/SettingsView';
 import { INITIAL_DATA } from './constants';
-import { AppData, Lecture, TraditionUnit, BackgroundMusic, UserAccount, EntertainmentItem, QuizQuestion } from './types';
-// Import History với alias HistoryIcon để tránh xung đột với browser History API
-import { Trophy, RefreshCw, Star, Music, Gamepad2, Plus, Trash2, LogIn, Key, Upload, Play, CheckCircle, Image as ImageIcon, Eye, QrCode, Edit2, Save, X, Type, Monitor, Layout as LayoutIcon, Shield, Camera, Award, Flag, ListMusic, Volume2, FileAudio, FileVideo, AlertTriangle, Disc, Lock, User, MessageSquare, Send, Loader2, ChevronRight, HelpCircle, History as HistoryIcon, BookOpen } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { generateQuiz } from './services/geminiService';
+import { AppData, UserAccount, BackgroundMusic } from './types';
+import { 
+  Trophy, RefreshCw, Star, Music, Gamepad2, Plus, Trash2, LogIn, Key, 
+  Upload, Play, CheckCircle, Image as ImageIcon, Eye, Edit2, Save, X, 
+  Type, Monitor, Layout as LayoutIcon, Shield, Camera, Award, Flag, 
+  ListMusic, Volume2, FileAudio, FileVideo, AlertTriangle, Disc, Lock, 
+  User, MessageSquare, Send, Loader2, ChevronRight, HelpCircle, 
+  History as HistoryIcon, BookOpen, QrCode as QrIcon // Đổi tên icon để tránh nhầm
+} from 'lucide-react';
 
 // --- SETTINGS VIEW ---
 const SettingsView: React.FC<{ 
