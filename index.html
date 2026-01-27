@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -24,8 +23,8 @@
             color: #1e293b;
             user-select: none;
             overflow-x: hidden;
+            margin: 0;
         }
-        
         .trong-dong-overlay {
             position: fixed;
             top: 50%;
@@ -39,64 +38,14 @@
             background-size: contain;
             opacity: 0.015;
             pointer-events: none;
-            z-index: 0;
-        }
-
-        .vpa-hero-bg {
-            background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .vpa-watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(1.5);
-            width: 100%;
-            height: 100%;
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg');
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.04;
-            pointer-events: none;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--military-red); }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .vpa-float { animation: float 6s ease-in-out infinite; }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .gold-glow {
-            filter: drop-shadow(0 0 15px rgba(255, 222, 0, 0.3));
-        }
-
-        .btn-military {
-            background: linear-gradient(to bottom, #c41e16, #991b1b);
-            border-bottom: 4px solid #7f1d1d;
-            transition: all 0.2s ease;
-        }
-        .btn-military:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-        }
-
-        .ai-chat-gradient {
-            background: linear-gradient(135deg, #7f1d1d 0%, #c41e16 100%);
+            z-index: -1;
         }
     </style>
-<script type="module" src="/App.tsx"></script>
+</head>
+<body>
+    <div class="trong-dong-overlay"></div>
+    <div id="root"></div>
+
+    <script type="module" src="/src/App.tsx"></script>
 </body>
 </html>
