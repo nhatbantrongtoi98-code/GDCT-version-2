@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
   Trophy, RefreshCw, Star, Music, Gamepad2, Plus, Trash2, LogIn, Key, 
   Upload, Play, CheckCircle, Image as ImageIcon, Eye, Edit2, Save, X, 
