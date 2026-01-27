@@ -413,20 +413,20 @@ const HomeView: React.FC<{
   const [isEditingGlobal, setIsEditingGlobal] = useState(false);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
-  // Xử lý Upload Ảnh (Gọn nhẹ)
+  // 1. Xử lý Upload Ảnh
   const handleImageUpload = (key: keyof AppData, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isAdmin) return;
     const file = e.target.files?.[0];
-    if (file && file.size <= 1.5 * 1024 * 1024) {
+    if (file && file.size <= 2 * 1024 * 1024) {
       const reader = new FileReader();
       reader.onload = (ev) => onUpdateGlobal(key, ev.target?.result as string);
       reader.readAsDataURL(file);
     } else {
-      alert("Ảnh quá lớn (tối đa 1.5MB)");
+      alert("Ảnh quá lớn (tối đa 2MB)");
     }
   };
 
-  // Xử lý Upload Nhạc (Gọn nhẹ)
+  // 2. Xử lý Upload Nhạc
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isAdmin) return;
     const file = e.target.files?.[0];
@@ -442,55 +442,9 @@ const HomeView: React.FC<{
     }
   };
 
-  return (
-    <div className="space-y-12 p-4">
-      {/* Banner Tiêu đề */}
-      <div className="bg-red-800 p-10 rounded-[2rem] text-white shadow-xl">
-        <h2 className="text-4xl font-black uppercase italic">{data.appName}</h2>
-        <p className="mt-2 opacity-90">Hệ thống giáo dục chính trị điện tử</p>
-      </div>
-
-      {/* Phần giới thiệu có thể chỉnh sửa */}
-      <EditableSection 
-        isAdmin={isAdmin} 
-        title={data.intro.title} 
-        content={data.intro.body} 
-        imageUrl={data.intro.imageUrl} 
-        onSave={(t, c, i, a) => onUpdate('intro', t, c, i, a)} 
-      />
-
-      {/* Nút cấu hình dành cho Admin */}
-      {isAdmin && (
-        <div className="bg-white p-8 rounded-[2rem] border shadow-lg">
-          <button 
-            onClick={() => setIsEditingGlobal(!isEditingGlobal)}
-            className="bg-slate-100 px-6 py-3 rounded-xl font-bold flex items-center gap-2"
-          >
-            {isEditingGlobal ? <X size={20}/> : <Edit2 size={20}/>} TÙY CHỈNH HỆ THỐNG
-          </button>
-
-          {isEditingGlobal && (
-            <div className="mt-6 grid gap-6 animate-in fade-in">
-              <input 
-                className="p-4 border rounded-xl w-full" 
-                value={data.appName} 
-                onChange={(e) => onUpdateGlobal('appName', e.target.value)}
-                placeholder="Tên ứng dụng..."
-              />
-              <div className="bg-slate-50 p-6 rounded-xl">
-                <p className="font-bold mb-2">Thêm nhạc nền (MP3/WAV < 2MB)</p>
-                <input type="file" accept="audio/*" onChange={handleAudioUpload} className="text-xs" />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
+  // 3. Xử lý Xóa Nhạc
   const handleDeleteTrack = (index: number) => {
-    if (confirm("Đồng chí có chắc muốn xóa bản nhạc này khỏi danh sách phát hệ thống?")) {
+    if (confirm("Đồng chí có chắc muốn xóa bản nhạc này?")) {
       const newList = [...data.backgroundPlaylist];
       newList.splice(index, 1);
       onUpdatePlaylist(newList);
@@ -499,17 +453,19 @@ const HomeView: React.FC<{
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      {/* Banner Tiêu đề */}
       <div className="bg-red-800 p-14 rounded-[3.5rem] shadow-2xl relative overflow-hidden text-white border-b-4 border-[#ffde00]/50">
         <div className="relative z-10 space-y-6">
           <div className="inline-flex items-center gap-3 bg-white/10 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl backdrop-blur-md border border-white/20">
              <Flag size={18} className="text-[#ffde00]" /> Lực lượng vũ trang Thủ đô Hà Nội
           </div>
-          <h2 className="text-6xl font-black uppercase text-white italic leading-tight tracking-tighter drop-shadow-2xl">{data.appName}</h2>
-          <p className="text-xl font-medium text-white/90 max-w-4xl leading-relaxed">Nền tảng giáo dục chính trị điện tử hiện đại dành cho cán bộ, chiến sĩ LLVT Thủ đô.</p>
+          <h2 className="text-6xl font-black uppercase italic leading-tight tracking-tighter drop-shadow-2xl">{data.appName}</h2>
+          <p className="text-xl font-medium text-white/90 max-w-4xl leading-relaxed">Nền tảng giáo dục chính trị điện tử hiện đại dành cho cán bộ, chiến sĩ.</p>
         </div>
         <div className="absolute top-[-50px] right-[-50px] p-8 opacity-5 scale-150 rotate-12 pointer-events-none"><Shield size={380} /></div>
       </div>
 
+      {/* Phần giới thiệu */}
       <EditableSection 
         isAdmin={isAdmin} 
         title={data.intro.title} 
@@ -519,89 +475,51 @@ const HomeView: React.FC<{
         onSave={(t, c, i, a) => onUpdate('intro', t, c, i, a)} 
       />
 
+      {/* Cấu hình hệ thống dành cho Admin */}
       {isAdmin && (
-        <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl space-y-10 relative overflow-hidden">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-8 relative z-10">
+        <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl space-y-10">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-8">
             <div className="space-y-2">
-               <h3 className="text-sm font-black uppercase text-red-700 flex items-center gap-3 tracking-[0.3em]"><Monitor size={22} /> CẤU HÌNH HỆ THỐNG QUẢN TRỊ</h3>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-9">Tùy biến thương hiệu, hình ảnh và âm hưởng hệ thống</p>
+               <h3 className="text-sm font-black uppercase text-red-700 flex items-center gap-3 tracking-[0.3em]"><Monitor size={22} /> CẤU HÌNH HỆ THỐNG</h3>
             </div>
-            <button onClick={() => setIsEditingGlobal(!isEditingGlobal)} className={`p-4 rounded-[2rem] transition-all shadow-lg border ${isEditingGlobal ? 'bg-red-100 text-red-600 border-red-200' : 'bg-white text-slate-400 hover:text-red-700 hover:border-red-400 border-slate-200'}`}>
+            <button onClick={() => setIsEditingGlobal(!isEditingGlobal)} className="p-4 rounded-full bg-slate-100">
               {isEditingGlobal ? <X size={24}/> : <LayoutIcon size={24}/>}
             </button>
           </div>
 
           {isEditingGlobal && (
-            <div className="space-y-12 animate-in fade-in zoom-in duration-500">
-              {/* Tên ứng dụng & Thông điệp */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Tên ứng dụng hệ thống:</label>
-                  <input 
-                    className="w-full p-5 border-2 border-slate-100 rounded-2xl outline-none focus:border-red-600 font-bold text-slate-700 bg-slate-50 transition-all text-sm"
-                    value={data.appName} onChange={(e) => onUpdateGlobal('appName', e.target.value)}
-                    placeholder="VD: Sổ tay Giáo dục Chính trị v7"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Thông điệp trang đăng nhập:</label>
-                  <input 
-                    className="w-full p-5 border-2 border-slate-100 rounded-2xl outline-none focus:border-red-600 font-bold text-slate-700 bg-slate-50 transition-all text-sm"
-                    value={data.loginMessage} onChange={(e) => onUpdateGlobal('loginMessage', e.target.value)}
-                    placeholder="VD: Khu vực dành cho cán bộ chiến sĩ..."
-                  />
-                </div>
-              </div>
-
-              {/* Logo và Hình ảnh */}
+            <div className="grid gap-8 animate-in zoom-in duration-300">
+              <input 
+                className="w-full p-5 border rounded-2xl" 
+                value={data.appName} 
+                onChange={(e) => onUpdateGlobal('appName', e.target.value)} 
+                placeholder="Tên ứng dụng..." 
+              />
+              
+              {/* Grid hình ảnh */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { key: 'appLogo', label: 'Logo Trang chính' },
-                  { key: 'loginLogoUrl', label: 'Logo Đăng nhập' },
-                  { key: 'loginImageUrl', label: 'Ảnh nền Đăng nhập' },
-                  { key: 'globalBackground', label: 'Ảnh nền Hệ thống' }
-                ].map((item) => (
-                  <div key={item.key} className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 flex flex-col gap-4">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest text-center">{item.label}</label>
-                    <div className="aspect-video w-full bg-white rounded-2xl overflow-hidden shadow-sm flex items-center justify-center border border-slate-200 relative group">
-                       {(data as any)[item.key] ? (
-                         <img src={(data as any)[item.key]} className="w-full h-full object-cover" />
-                       ) : (
-                         <ImageIcon size={30} className="text-slate-200" />
-                       )}
-                       <div className="absolute inset-0 bg-red-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <label className="cursor-pointer bg-white text-red-700 p-3 rounded-xl shadow-lg hover:scale-110 transition-transform">
-                             <Camera size={20} />
-                             <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(item.key as any, e)} />
-                          </label>
-                       </div>
-                    </div>
+                {[{ key: 'appLogo', label: 'Logo Chính' }, { key: 'globalBackground', label: 'Nền hệ thống' }].map(item => (
+                  <div key={item.key} className="bg-slate-50 p-4 rounded-2xl border flex flex-col items-center">
+                    <span className="text-[10px] font-bold mb-2 uppercase">{item.label}</span>
+                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(item.key as any, e)} className="text-[10px]" />
                   </div>
                 ))}
               </div>
 
-              {/* Quản lý Nhạc nền */}
-              <div className="space-y-4">
-                <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Danh sách Âm hưởng Quân đội:</label>
-                <div className="bg-slate-50 p-8 rounded-[3rem] border border-slate-100 space-y-6">
-                  <div className="flex justify-between items-center">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase">Tải lên định dạng MP3, WAV (Tối đa 2MB)</p>
-                     <button onClick={() => audioInputRef.current?.click()} className="bg-red-700 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-red-800 transition-all">
-                        <FileAudio size={18}/> Thêm bản ghi mới
-                     </button>
-                     <input type="file" ref={audioInputRef} className="hidden" accept="audio/*" onChange={handleAudioUpload} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                    {data.backgroundPlaylist.map((track, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-red-200 transition-all">
-                        <div className="flex items-center gap-3">
-                           <Disc size={16} className="text-red-700 animate-spin-slow" />
-                           <span className="text-[11px] font-black text-slate-700 uppercase tracking-tighter truncate max-w-[150px]">{track.title}</span>
-                        </div>
-                        <button onClick={() => handleDeleteTrack(i)} className="text-slate-300 hover:text-red-600 transition-colors p-1"><Trash2 size={18}/></button>
-                      </div>
-                    ))}
-                  </div>
+              {/* Quản lý nhạc */}
+              <div className="bg-slate-50 p-6 rounded-2xl">
+                <div className="flex justify-between mb-4">
+                  <span className="font-bold uppercase text-xs">Danh sách nhạc nền</span>
+                  <button onClick={() => audioInputRef.current?.click()} className="text-red-700 font-bold text-xs">+ THÊM NHẠC</button>
+                  <input type="file" ref={audioInputRef} className="hidden" accept="audio/*" onChange={handleAudioUpload} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {data.backgroundPlaylist.map((track, i) => (
+                    <div key={i} className="bg-white p-3 rounded-xl flex justify-between border">
+                      <span className="text-xs font-bold truncate">{track.title}</span>
+                      <button onClick={() => handleDeleteTrack(i)}><Trash2 size={14} className="text-red-500"/></button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
