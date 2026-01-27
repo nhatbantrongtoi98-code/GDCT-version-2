@@ -406,8 +406,41 @@ const App: React.FC = () => {
 const HomeView: React.FC<{ data: AppData; isAdmin: boolean; onUpdate: (key: keyof AppData, t: string, c: string, i?: string, a?: string) => void; onUpdateGlobal: (k: keyof AppData, v: any) => void; onUpdatePlaylist: (l: BackgroundMusic[]) => void }> = ({ data, isAdmin, onUpdate, onUpdateGlobal, onUpdatePlaylist }) => {
   const [isEditingGlobal, setIsEditingGlobal] = useState(false);
   const audioInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = (key: keyof AppData, e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageUpload = async (key: keyof AppData, e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!isAdmin) return;
+  const file = e.target.files?.[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Data = event.target?.result as string;
+      const mediaId = `img_${key}_${Date.now()}`; // Tạo ID duy nhất
+      
+      try {
+        await saveMedia(mediaId, base64Data); // Lưu vào IndexedDB
+        onUpdateGlobal(key, mediaId); // Chỉ lưu ID vào AppData (localStorage)
+      } catch (err) {
+        alert("Lỗi lưu trữ dữ liệu hình ảnh.");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+};
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file && isAdmin) {
+    // Giờ đây đồng chí có thể tăng giới hạn lên 50MB-100MB thoải mái!
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Data = event.target?.result as string;
+      const mediaId = `audio_${Date.now()}`;
+      
+      await saveMedia(mediaId, base64Data);
+      const title = file.name.split('.').slice(0, -1).join('.');
+      onUpdatePlaylist([...data.backgroundPlaylist, { title, url: mediaId }]); // Lưu ID vào playlist
+    };
+    reader.readAsDataURL(file);
+  }
+};
     if (!isAdmin) return;
     const file = e.target.files?.[0];
     if (file) {
