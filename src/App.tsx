@@ -320,6 +320,7 @@ const AuthScreen: React.FC<{ data: AppData; onLogin: (user: UserAccount) => void
   }, [currentUser]);
 
   const isAdmin = currentUser?.role === 'admin';
+};
 
   // Hàm cập nhật và đồng bộ thông tin người dùng với cơ sở dữ liệu (localStorage)
   const handleUpdateUser = (updated: UserAccount) => {
