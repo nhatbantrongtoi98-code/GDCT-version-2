@@ -75,9 +75,20 @@ const App: React.FC = () => {
 
   // --- CÁC HÀM CẬP NHẬT DỮ LIỆU ĐẨY THẲNG LÊN CLOUD ---
 
-  const saveToCloud = (newData: AppData) => {
-    set(ref(db, 'military_app_data'), newData);
-  };
+  const saveToCloud = async (updatedConfig, updatedData) => {
+  try {
+    const database = getDatabase();
+    // Lưu cả cấu hình hệ thống VÀ toàn bộ nội dung (bài học, thông báo...)
+    await set(ref(database, 'military_app_data'), {
+      config: updatedConfig,
+      content: updatedData, // Đây là phần dữ liệu đồng chí đang bị thiếu
+      lastUpdate: Date.now()
+    });
+    console.log("Đã đồng bộ toàn bộ dữ liệu lên Cloud!");
+  } catch (error) {
+    console.error("Lỗi đồng bộ:", error);
+  }
+};
 
   const updateGlobal = (key: keyof AppData, value: any) => {
     const newData = { ...appData, [key]: value };
