@@ -1,155 +1,89 @@
 import React, { useState, useRef } from 'react';
-import { 
-  User, Shield, Image as ImageIcon, Camera, 
-  Save, Lock, CheckCircle2 
-} from 'lucide-react';
+import { User, Shield, Image as ImageIcon, Camera, Save, Lock, CheckCircle2 } from 'lucide-react';
 
-const SettingsView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
-  // 1. Quản lý thông tin cá nhân
-  const [displayName, setDisplayName] = useState<string>("NGUYỄN ĐẮC THANH");
-  const [avatar, setAvatar] = useState<string>("https://api.dicebear.com/7.x/avataaars/svg?seed=Military");
-  const [bgUrl, setBgUrl] = useState<string>(localStorage.getItem('login_bg') || "");
+const SettingsView: React.FC = () => {
+  // Giả định tài khoản đang đăng nhập là admin123
+  const [username] = useState("admin123"); 
+  const isAdmin = username === "admin123"; // Quyền tối cao cho admin123
+
+  const [displayName, setDisplayName] = useState("NGUYỄN ĐẮC THANH");
+  const [bgUrl, setBgUrl] = useState(localStorage.getItem('login_bg') || "");
   const [showToast, setShowToast] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Thông báo cập nhật thành công cho mọi hành động
-  const triggerSuccess = () => {
+  const handleSaveAll = () => {
+    if (isAdmin) {
+      // Admin123 có quyền lưu link nền vào hệ thống
+      localStorage.setItem('login_bg', bgUrl);
+      // Logic cập nhật mật khẩu 123456 tại đây nếu cần
+    }
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const handleSaveAll = () => {
-    if (isAdmin && bgUrl) {
-      localStorage.setItem('login_bg', bgUrl); // Lưu link nền vào bộ nhớ
-    }
-    triggerSuccess();
-  };
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatar(reader.result as string);
-        triggerSuccess();
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   return (
-    <div className="max-w-6xl mx-auto p-4 animate-in fade-in duration-500 relative">
-      
-      {/* THÔNG BÁO THÀNH CÔNG */}
+    <div className="max-w-6xl mx-auto p-4 relative">
+      {/* Toast thông báo thành công */}
       {showToast && (
-        <div className="fixed top-10 right-10 z-[100] flex items-center gap-3 bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-in slide-in-from-right-10">
-          <CheckCircle2 size={20} />
-          <span className="text-[11px] font-black uppercase tracking-widest">Cập nhật nội dung thành công!</span>
+        <div className="fixed top-10 right-10 z-[100] bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl animate-bounce">
+          <span className="text-[11px] font-black uppercase">Đã lưu mọi thay đổi cho Admin!</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* KHỐI 1: AVATAR & DANH XƯNG */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white p-10 rounded-[3.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center">
-            <div className="relative">
-              <div className="w-40 h-40 rounded-full border-[6px] border-red-50 overflow-hidden shadow-inner bg-slate-50">
-                <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
-              </div>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-2 right-2 p-3 bg-red-700 text-white rounded-full shadow-lg border-4 border-white"
-              >
-                <Camera size={18} />
-              </button>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
-            </div>
-
-            <h3 className="mt-8 text-2xl font-black text-slate-800 uppercase tracking-tighter">{displayName}</h3>
-            <div className={`mt-3 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${
-              isAdmin ? 'bg-red-700 text-white' : 'bg-slate-100 text-slate-500'
-            }`}>
-              {isAdmin ? '🛡️ NGƯỜI ĐIỀU HÀNH' : 'ADMIN'}
-            </div>
+        {/* Bên trái: Hiển thị danh xưng */}
+        <div className="lg:col-span-1 bg-white p-10 rounded-[3.5rem] shadow-sm border border-slate-100 flex flex-col items-center">
+          <div className="w-40 h-40 rounded-full border-[6px] border-red-700 overflow-hidden bg-slate-50">
+             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Avatar" />
+          </div>
+          <h3 className="mt-8 text-2xl font-black text-slate-800 uppercase">{displayName}</h3>
+          <div className="mt-3 px-6 py-2 rounded-full text-[10px] font-black bg-red-700 text-white uppercase tracking-widest">
+            🛡️ NGƯỜI ĐIỀU HÀNH TỐI CAO
           </div>
         </div>
 
-        {/* KHỐI 2: CHỈNH SỬA CHI TIẾT */}
-        <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
+        {/* Bên phải: Form chỉnh sửa nội dung */}
+        <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             
-            {/* CỘT TRÁI: TÊN & MẬT KHẨU */}
-            <div className="space-y-8">
-              <section className="space-y-4">
-                <h4 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase italic">
-                  <User size={18} className="text-red-700"/> Thông tin cá nhân
-                </h4>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-4 italic">Tên hiển thị mới</label>
-                  <input 
-                    className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold outline-none focus:ring-2 ring-red-100" 
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value.toUpperCase())}
-                  />
-                </div>
-              </section>
-
-              <section className="space-y-4">
-                <h4 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase italic">
-                  <Lock size={18} className="text-red-700"/> Đổi mật khẩu
-                </h4>
-                <div className="space-y-3">
-                  <input type="password" placeholder="Mật khẩu hiện tại" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs outline-none focus:border-red-300" />
-                  <input type="password" placeholder="Mật khẩu mới" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs outline-none focus:border-red-300" />
-                </div>
-              </section>
+            {/* Phần 1: Tên & Mật khẩu */}
+            <div className="space-y-6">
+              <h4 className="text-sm font-black text-slate-800 uppercase italic">Thông tin Admin</h4>
+              <input 
+                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold" 
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Thay đổi tên Admin..."
+              />
+              <input 
+                type="password" 
+                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl text-sm" 
+                placeholder="Mật khẩu mới (thay cho 123456)" 
+              />
             </div>
 
-            {/* CỘT PHẢI: THAY ĐỔI NỀN (CHỈ ADMIN) */}
-            <div className="flex flex-col">
-              <h4 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase italic mb-4">
-                <ImageIcon size={18} className="text-red-700"/> Giao diện hệ thống
-              </h4>
-              
-              {isAdmin ? (
-                <div className="space-y-4 animate-in fade-in">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-4 italic">Gắn ảnh thay đổi nền (URL)</label>
-                    <textarea 
-                      className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-[11px] font-medium outline-none min-h-[120px] focus:ring-2 ring-red-100" 
-                      placeholder="Dán link ảnh nền trang đăng nhập tại đây..."
-                      value={bgUrl}
-                      onChange={(e) => setBgUrl(e.target.value)}
-                    />
-                  </div>
-                  <div className="h-24 rounded-2xl overflow-hidden border-2 border-slate-50 shadow-inner bg-slate-100 relative">
-                    <img src={bgUrl} className="w-full h-full object-cover opacity-50" alt="Preview" />
-                    <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black uppercase text-slate-400">Xem trước nền</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50 rounded-[3rem] text-center border border-dashed border-slate-200">
-                  <Shield size={40} className="text-slate-200 mb-4" />
-                  <p className="text-[9px] font-bold text-slate-400 uppercase leading-relaxed px-4">
-                    Bạn đang sử dụng tài khoản chiến sĩ.<br/>liên hệ quản trị viên để thay đổi giao diện chung.
-                  </p>
-                </div>
-              )}
+            {/* Phần 2: Thay đổi nền (Chỉ admin123 mới thấy và dùng được) */}
+            <div className="space-y-6">
+              <h4 className="text-sm font-black text-slate-800 uppercase italic">Giao diện đăng nhập</h4>
+              <textarea 
+                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] min-h-[120px]" 
+                placeholder="Dán link ảnh nền muốn thay đổi..."
+                value={bgUrl}
+                onChange={(e) => setBgUrl(e.target.value)}
+              />
+              <div className="h-20 rounded-xl overflow-hidden border bg-slate-100 relative">
+                <img src={bgUrl} className="w-full h-full object-cover opacity-40" alt="Preview" />
+                <div className="absolute inset-0 flex items-center justify-center text-[8px] font-bold uppercase">Xem trước nền hệ thống</div>
+              </div>
             </div>
           </div>
 
-          {/* NÚT CẬP NHẬT TỔNG THỂ */}
-          <div className="mt-12 flex justify-center md:justify-end">
-            <button 
-              onClick={handleSaveAll}
-              className="flex items-center gap-3 bg-red-700 text-white px-12 py-5 rounded-[2rem] font-black text-[11px] shadow-2xl hover:bg-red-800 hover:scale-105 transition-all uppercase tracking-widest"
-            >
-              <Save size={18}/> Cập nhật tất cả thay đổi
-            </button>
-          </div>
+          <button 
+            onClick={handleSaveAll}
+            className="w-full md:w-auto bg-red-700 text-white px-12 py-5 rounded-[2rem] font-black text-[11px] shadow-2xl hover:bg-red-800 transition-all uppercase"
+          >
+            <Save size={18} className="inline mr-2"/> XÁC NHẬN THAY ĐỔI TOÀN HỆ THỐNG
+          </button>
         </div>
-
       </div>
     </div>
   );
