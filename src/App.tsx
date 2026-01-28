@@ -11,7 +11,7 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
   authDomain: "gdct-9b57d.firebaseapp.com",
-  databaseURL: "https://gdct-9b57d-default-rtdb.firebaseio.com",
+  databaseURL: "https://https://gdct-9b57d-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "gdct-9b57d",
   storageBucket: "gdct-9b57d.firebasestorage.app",
   messagingSenderId: "818099040678",
