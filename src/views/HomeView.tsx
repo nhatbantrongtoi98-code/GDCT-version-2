@@ -75,7 +75,7 @@ const HomeView: React.FC<HomeViewProps> = ({ data, isAdmin, onUpdate, onUpdateGl
       <div className="bg-red-800 p-14 rounded-[3.5rem] shadow-2xl relative overflow-hidden text-white border-b-4 border-[#ffde00]/50">
         <div className="relative z-10 space-y-6">
           <div className="inline-flex items-center gap-3 bg-white/10 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl backdrop-blur-md border border-white/20">
-             <Flag size={18} className="text-[#ffde00]" /> Lực lượng vũ trang nhân dân Việt Nam
+             <Flag size={18} className="text-[#ffde00]" /> Bộ Tư lệnh Thủ đô Hà Nội
           </div>
           
           <div className="flex items-center gap-6">
