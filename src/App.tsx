@@ -73,14 +73,14 @@ const App: React.FC = () => {
 
   // --- HÀM LƯU TỔNG LỰC LÊN CLOUD ---
   const saveToCloud = async (newData: AppData) => {
-    try {
-      // Đẩy toàn bộ cục newData lên nhánh content
-      await set(ref(db, 'military_app_data/content'), newData);
-      console.log("Đã đồng bộ mọi thay đổi lên Cloud!");
-    } catch (error) {
-      console.error("Lỗi đồng bộ Cloud:", error);
-    }
-  };
+  try {
+    // Đẩy thẳng vào military_app_data, không tạo thêm nhánh con content nữa
+    await set(ref(db, 'military_app_data'), newData);
+    console.log("Đã phát sóng dữ liệu mới!");
+  } catch (error) {
+    console.error("Lỗi phát sóng:", error);
+  }
+};
 
   // --- CÁC HÀM CẬP NHẬT GIAO DIỆN ---
   const updateGlobal = (key: keyof AppData, value: any) => {
