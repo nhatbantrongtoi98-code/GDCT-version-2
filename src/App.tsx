@@ -1,8 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, onValue } from "firebase/database";
+import { 
+  Settings, User, Camera, Save, Layout as LayoutIcon, 
+  Trophy, BookOpen, Star, Gamepad2 
+} from 'lucide-react';
+
+// --- 1. CẤU HÌNH FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
+  authDomain: "gdct-9b57d.firebaseapp.com",
+  databaseURL: "https://gdct-9b57d-default-rtdb.firebaseio.com",
+  projectId: "gdct-9b57d",
+  storageBucket: "gdct-9b57d.firebasestorage.app",
+  messagingSenderId: "818099040678",
+  appId: "1:818099040678:web:dd8601e6250c96ec415f67",
+  measurementId: "G-9MSSR1LKNT"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 // Import các thành phần
-import { AppData, UserAccount, BackgroundMusic } from './types';
+import { AppData, UserAccount } from './types';
 import { INITIAL_DATA } from './data/initialData';
 import Layout from './components/Layout';
 import AuthScreen from './components/AuthScreen';
@@ -18,61 +39,67 @@ import GameView from './views/GameView';
 import SettingsView from './views/SettingsView';
 
 const App: React.FC = () => {
-  // 1. Khởi tạo người dùng
+  // 1. Khởi tạo người dùng (Giữ LocalStorage để ghi nhớ đăng nhập riêng từng máy)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
     const saved = localStorage.getItem('military_current_user_v7');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // 2. Khởi tạo dữ liệu ứng dụng
-  const [appData, setAppData] = useState<AppData>(() => {
-    const saved = localStorage.getItem('military_app_data_v7');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return INITIAL_DATA;
-      }
-    }
-    return INITIAL_DATA;
-  });
+  // 2. Khởi tạo dữ liệu ứng dụng (Mặc định ban đầu)
+  const [appData, setAppData] = useState<AppData>(INITIAL_DATA);
 
-  // 3. Tự động lưu dữ liệu
+  // --- MỚI: ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE ---
   useEffect(() => {
-    try {
-      localStorage.setItem('military_app_data_v7', JSON.stringify(appData));
-    } catch (e) {
-      console.error("LocalStorage bị tràn! Hãy xóa bớt nhạc hoặc ảnh cũ.");
-      alert("Bộ nhớ trình duyệt đã đầy! Đồng chí vui lòng xóa bớt nhạc hoặc ảnh cũ để lưu dữ liệu mới.");
-    }
-  }, [appData]);
+    const dataRef = ref(db, 'military_app_data');
+    
+    // Lắng nghe thay đổi từ Cloud - Khi Admin sửa, máy người dùng tự nhảy
+    const unsubscribe = onValue(dataRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setAppData(data);
+      } else {
+        // Nếu Cloud trống, đẩy dữ liệu gốc lên lần đầu
+        set(ref(db, 'military_app_data'), INITIAL_DATA);
+      }
+    });
 
+    return () => unsubscribe();
+  }, []);
+
+  // Ghi nhớ user đăng nhập
   useEffect(() => {
     if (currentUser) localStorage.setItem('military_current_user_v7', JSON.stringify(currentUser));
     else localStorage.removeItem('military_current_user_v7');
   }, [currentUser]);
 
-  // --- CÁC HÀM CẬP NHẬT DỮ LIỆU ---
+  // --- CÁC HÀM CẬP NHẬT DỮ LIỆU ĐẨY THẲNG LÊN CLOUD ---
+
+  const saveToCloud = (newData: AppData) => {
+    set(ref(db, 'military_app_data'), newData);
+  };
 
   const updateGlobal = (key: keyof AppData, value: any) => {
-    setAppData(prev => ({ ...prev, [key]: value }));
+    const newData = { ...appData, [key]: value };
+    saveToCloud(newData);
   };
 
   const updateSection = (key: keyof AppData, title: string, body: string, imageUrl?: string, avatarUrl?: string) => {
-    setAppData(prev => ({
-      ...prev,
-      [key]: { ...prev[key as keyof AppData] as any, title, body, imageUrl, avatarUrl }
-    }));
+    const newData = {
+      ...appData,
+      [key]: { ...appData[key as keyof AppData] as any, title, body, imageUrl, avatarUrl }
+    };
+    saveToCloud(newData);
   };
 
   const updateTradition = (key: string, name: string, history: string, imageUrl?: string, avatarUrl?: string) => {
-    setAppData(prev => ({
-      ...prev,
+    const newData = {
+      ...appData,
       tradition: {
-        ...prev.tradition,
+        ...appData.tradition,
         [key]: { name, history, imageUrl, avatarUrl }
       }
-    }));
+    };
+    saveToCloud(newData);
   };
 
   if (!currentUser) return <AuthScreen data={appData} onLogin={setCurrentUser} />;
@@ -120,7 +147,8 @@ const App: React.FC = () => {
                     const newList = appData.lectures[category].map(l => 
                       l.id === id ? { ...l, title, posterUrl: poster } : l
                     );
-                    setAppData(prev => ({ ...prev, lectures: { ...prev.lectures, [cat]: newList } }));
+                    const newData = { ...appData, lectures: { ...appData.lectures, [cat]: newList } };
+                    saveToCloud(newData);
                   }} 
                 />
               } />
@@ -128,7 +156,10 @@ const App: React.FC = () => {
                 <EntertainmentView 
                   data={appData} 
                   isAdmin={isAdmin} 
-                  onUpdateEntertainment={(updater) => setAppData(prev => ({ ...prev, entertainment: updater(prev.entertainment) }))} 
+                  onUpdateEntertainment={(updater) => {
+                    const newData = { ...appData, entertainment: updater(appData.entertainment) };
+                    saveToCloud(newData);
+                  }} 
                 />
               } />
               <Route path="/game" element={<GameView data={appData} isAdmin={isAdmin} />} />
