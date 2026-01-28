@@ -7,7 +7,7 @@ import {
   Trophy, BookOpen, Star, Gamepad2 
 } from 'lucide-react';
 
-// --- 1. CẤU HÌNH FIREBASE ---
+// --- CẤU HÌNH FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
   authDomain: "gdct-9b57d.firebaseapp.com",
@@ -22,14 +22,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Import các thành phần
 import { AppData, UserAccount } from './types';
 import { INITIAL_DATA } from './data/initialData';
 import Layout from './components/Layout';
 import AuthScreen from './components/AuthScreen';
 import AIAssistant from './components/AIAssistant';
 
-// Import các khung nhìn
 import HomeView from './views/HomeView';
 import HistoryVNView from './views/HistoryVNView';
 import TraditionView from './views/TraditionView';
@@ -39,50 +37,35 @@ import GameView from './views/GameView';
 import SettingsView from './views/SettingsView';
 
 const App: React.FC = () => {
-  // 1. Khởi tạo người dùng
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
     const saved = localStorage.getItem('military_current_user_v7');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // 2. Khởi tạo dữ liệu ứng dụng
   const [appData, setAppData] = useState<AppData>(INITIAL_DATA);
 
-  // --- ĐỒNG BỘ DỮ LIỆU THỜI GIAN THỰC ---
+  // ĐỒNG BỘ THỜI GIAN THỰC
   useEffect(() => {
-  // Lắng nghe trực tiếp vào nhánh military_app_data
-  const dataRef = ref(db, 'military_app_data');
-  
-  const unsubscribe = onValue(dataRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      // Cập nhật toàn bộ kho dữ liệu cho máy chiến sĩ
-      setAppData(data); 
-      console.log("Đã nhận dữ liệu chi tiết từ Cloud!");
-    } else {
-      // Nếu Cloud trống (do ta vừa xóa), đẩy lại dữ liệu gốc lên
-      set(ref(db, 'military_app_data'), INITIAL_DATA);
-    }
-  });
-
-  return () => unsubscribe();
-}, []);
-
+    const dataRef = ref(db, 'military_app_data');
+    const unsubscribe = onValue(dataRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setAppData(data);
+      } else {
+        set(ref(db, 'military_app_data'), INITIAL_DATA);
+      }
+    });
     return () => unsubscribe();
   }, []);
 
-  // --- HÀM LƯU TỔNG LỰC LÊN CLOUD ---
   const saveToCloud = async (newData: AppData) => {
-  try {
-    // Đẩy thẳng vào military_app_data, không tạo thêm nhánh con content nữa
-    await set(ref(db, 'military_app_data'), newData);
-    console.log("Đã phát sóng dữ liệu mới!");
-  } catch (error) {
-    console.error("Lỗi phát sóng:", error);
-  }
-};
+    try {
+      await set(ref(db, 'military_app_data'), newData);
+    } catch (error) {
+      console.error("Lỗi đồng bộ:", error);
+    }
+  };
 
-  // --- CÁC HÀM CẬP NHẬT GIAO DIỆN ---
   const updateGlobal = (key: keyof AppData, value: any) => {
     const newData = { ...appData, [key]: value };
     setAppData(newData);
@@ -101,77 +84,36 @@ const App: React.FC = () => {
   const updateTradition = (key: string, name: string, history: string, imageUrl?: string, avatarUrl?: string) => {
     const newData = {
       ...appData,
-      tradition: {
-        ...appData.tradition,
-        [key]: { name, history, imageUrl, avatarUrl }
-      }
+      tradition: { ...appData.tradition, [key]: { name, history, imageUrl, avatarUrl } }
     };
     setAppData(newData);
     saveToCloud(newData);
   };
 
   if (!currentUser) return <AuthScreen data={appData} onLogin={setCurrentUser} />;
-
   const isAdmin = currentUser.role === 'admin';
 
   return (
     <Router>
-      <div 
-        className="min-h-screen transition-all duration-500" 
-        style={{ 
-          backgroundImage: appData.globalBackground ? `url(${appData.globalBackground})` : 'none', 
-          backgroundColor: '#f8fafc',
-          backgroundSize: 'cover', 
-          backgroundAttachment: 'fixed',
-          backgroundPosition: 'center'
-        }}
-      >
+      <div className="min-h-screen" style={{ backgroundImage: appData.globalBackground ? `url(${appData.globalBackground})` : 'none', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
         <div className="bg-white/90 min-h-screen backdrop-blur-md">
-          <Layout 
-            playlist={appData.backgroundPlaylist} 
-            currentUser={currentUser} 
-            appName={appData.appName} 
-            appLogo={appData.appLogo} 
-            onLogout={() => setCurrentUser(null)}
-          >
+          <Layout playlist={appData.backgroundPlaylist} currentUser={currentUser} appName={appData.appName} appLogo={appData.appLogo} onLogout={() => setCurrentUser(null)}>
             <Routes>
-              <Route path="/" element={
-                <HomeView 
-                  data={appData} 
-                  isAdmin={isAdmin} 
-                  onUpdate={updateSection} 
-                  onUpdateGlobal={updateGlobal}
-                  onUpdatePlaylist={(list) => updateGlobal('backgroundPlaylist', list)}
-                />
-              } />
+              <Route path="/" element={<HomeView data={appData} isAdmin={isAdmin} onUpdate={updateSection} onUpdateGlobal={updateGlobal} onUpdatePlaylist={(list) => updateGlobal('backgroundPlaylist', list)} />} />
               <Route path="/history" element={<HistoryVNView data={appData} isAdmin={isAdmin} onUpdate={updateSection} />} />
               <Route path="/tradition" element={<TraditionView data={appData} isAdmin={isAdmin} onUpdate={updateTradition} />} />
-              <Route path="/lectures" element={
-                <LecturesView 
-                  data={appData} 
-                  isAdmin={isAdmin} 
-                  onUpdateLecture={(cat, id, title, poster) => {
-                    const category = cat as keyof typeof appData.lectures;
-                    const newList = appData.lectures[category].map(l => 
-                      l.id === id ? { ...l, title, posterUrl: poster } : l
-                    );
-                    const newData = { ...appData, lectures: { ...appData.lectures, [cat]: newList } };
-                    setAppData(newData);
-                    saveToCloud(newData);
-                  }} 
-                />
-              } />
-              <Route path="/entertainment" element={
-                <EntertainmentView 
-                  data={appData} 
-                  isAdmin={isAdmin} 
-                  onUpdateEntertainment={(updater) => {
-                    const newData = { ...appData, entertainment: updater(appData.entertainment) };
-                    setAppData(newData);
-                    saveToCloud(newData);
-                  }} 
-                />
-              } />
+              <Route path="/lectures" element={<LecturesView data={appData} isAdmin={isAdmin} onUpdateLecture={(cat, id, title, poster) => {
+                const category = cat as keyof typeof appData.lectures;
+                const newList = appData.lectures[category].map(l => l.id === id ? { ...l, title, posterUrl: poster } : l);
+                const newData = { ...appData, lectures: { ...appData.lectures, [cat]: newList } };
+                setAppData(newData);
+                saveToCloud(newData);
+              }} />} />
+              <Route path="/entertainment" element={<EntertainmentView data={appData} isAdmin={isAdmin} onUpdateEntertainment={(updater) => {
+                const newData = { ...appData, entertainment: updater(appData.entertainment) };
+                setAppData(newData);
+                saveToCloud(newData);
+              }} />} />
               <Route path="/game" element={<GameView data={appData} isAdmin={isAdmin} />} />
               <Route path="/settings" element={<SettingsView currentUser={currentUser} onUpdateUser={setCurrentUser} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
