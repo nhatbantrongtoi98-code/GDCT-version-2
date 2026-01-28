@@ -91,3 +91,49 @@ const HomeView: React.FC<HomeViewProps> = ({ data, isAdmin, onUpdate, onUpdateGl
               <p className="text-sm font-bold text-slate-700">Hình nền ứng dụng</p>
             </div>
             <label className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black cursor-pointer hover:bg-blue-600 transition-all">
+              TẢI ẢNH LÊN
+              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'globalBackground')} />
+            </label>
+          </div>
+          <div className="bg-white p-6 rounded-[2.5rem] border shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl"><Music size={20}/></div>
+              <p className="text-sm font-bold text-slate-700">Nhạc nền hệ thống</p>
+            </div>
+            <label className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black cursor-pointer hover:bg-amber-600 transition-all">
+              TẢI FILE NHẠC
+              <input type="file" className="hidden" accept="audio/*" onChange={(e) => handleFileUpload(e, 'playlist')} />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT SECTION */}
+      <div className="bg-white p-12 rounded-[3.5rem] shadow-sm border relative group">
+        {isAdmin && !isEditing && (
+          <button onClick={() => setIsEditing(true)} className="absolute top-8 right-8 p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-red-700 hover:text-white transition-all"><Edit2 size={18} /></button>
+        )}
+        {isEditing ? (
+          <div className="space-y-4">
+            <input className="w-full text-2xl font-black p-4 border-2 rounded-2xl outline-none focus:border-red-700" 
+                   value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} />
+            <textarea className="w-full h-40 p-4 border-2 rounded-2xl outline-none focus:border-red-700 font-medium" 
+                      value={editForm.body} onChange={e => setEditForm({...editForm, body: e.target.value})} />
+            <div className="flex gap-2">
+              <button onClick={saveContent} className="bg-red-700 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-red-200"><Save size={18}/> LƯU NỘI DUNG</button>
+              <button onClick={() => setIsEditing(false)} className="bg-slate-100 text-slate-600 px-8 py-3 rounded-xl font-bold">HỦY</button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <h3 className="text-3xl font-black text-red-800 uppercase italic tracking-tight">{data.intro.title}</h3>
+            <div className="w-20 h-1.5 bg-red-700 rounded-full"></div>
+            <p className="text-slate-600 text-lg leading-relaxed font-medium whitespace-pre-line italic">"{data.intro.body}"</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default HomeView;
