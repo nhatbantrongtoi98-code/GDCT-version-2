@@ -336,13 +336,11 @@ const AuthScreen: React.FC<{ data: AppData; onLogin: (user: UserAccount) => void
     }
   };
 
-  const updateGlobal = (key: keyof AppData, val: any) => {
-    if (isAdmin) setAppData(prev => ({ ...prev, [key]: val }));
-  };
-
-  const updateEntertainment = (updater: (prev: AppData['entertainment']) => AppData['entertainment']) => {
-    if (isAdmin) setAppData(prev => ({ ...prev, entertainment: updater(prev.entertainment) }));
-  };
+ const updateGlobal = <K extends keyof AppData>(key: K, val: AppData[K]) => {
+  if (isAdmin) {
+    setAppData(prev => ({ ...prev, [key]: val }));
+  }
+};
 
   const updateSection = (key: keyof AppData, title: string, content: string, img?: string, avatar?: string) => {
     if (!isAdmin) return;
