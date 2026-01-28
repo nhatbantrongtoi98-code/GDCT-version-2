@@ -52,7 +52,7 @@ const SettingsView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
             <div className={`mt-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
               isAdmin ? 'bg-red-800 text-white shadow-md' : 'bg-slate-100 text-slate-500'
             }`}>
-              {isAdmin ? 'SĨ QUAN QUẢN LÝ' : 'CHIẾN SĨ'}
+              {isAdmin ? 'SĨ QUAN QUẢN LÝ' : 'ADMIN'}
             </div>
           </div>
 
