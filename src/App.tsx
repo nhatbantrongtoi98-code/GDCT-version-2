@@ -11,7 +11,8 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
   authDomain: "gdct-9b57d.firebaseapp.com",
-  databaseURL: "https://https://gdct-9b57d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  // Link này phải khớp với vùng Singapore đồng chí đã tạo
+  databaseURL: "https://gdct-9b57d-default-rtdb.asia-southeast1.firebasedatabase.app", 
   projectId: "gdct-9b57d",
   storageBucket: "gdct-9b57d.firebasestorage.app",
   messagingSenderId: "818099040678",
