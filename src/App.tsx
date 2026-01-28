@@ -95,13 +95,17 @@ const App: React.FC = () => {
               <Route path="/" element={<HomeView data={appData} isAdmin={isAdmin} onUpdate={updateSection} onUpdateGlobal={updateGlobal} onUpdatePlaylist={(list) => updateGlobal('backgroundPlaylist', list)} />} />
               <Route path="/history" element={<HistoryVNView data={appData} isAdmin={isAdmin} onUpdate={updateSection} />} />
               <Route path="/tradition" element={<TraditionView data={appData} isAdmin={isAdmin} onUpdate={updateTradition} />} />
-              <Route path="/lectures" element={<LecturesView data={appData} isAdmin={isAdmin} onUpdateLecture={(cat, id, title, poster) => {
-                const category = cat as keyof typeof appData.lectures;
-                const newList = appData.lectures[category].map(l => l.id === id ? { ...l, title, posterUrl: poster } : l);
-                const newData = { ...appData, lectures: { ...appData.lectures, [cat]: newList } };
-                setAppData(newData);
-                saveToCloud(newData);
-              }} />} />
+              {/* Tìm đoạn /lectures và thay bằng đoạn này */}
+<Route 
+  path="/lectures" 
+  element={
+    <LecturesView 
+      data={appData} 
+      isAdmin={isAdmin} 
+      onUpdateGlobal={updateGlobal} 
+    />
+  } 
+/>
               <Route path="/entertainment" element={<EntertainmentView data={appData} isAdmin={isAdmin} onUpdateEntertainment={(updater) => {
                 const newData = { ...appData, entertainment: updater(appData.entertainment) };
                 setAppData(newData);
