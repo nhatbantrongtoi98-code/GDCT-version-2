@@ -1094,27 +1094,35 @@ const GameView: React.FC<{ data: AppData; isAdmin: boolean }> = ({ data, isAdmin
 };
 
 // --- COMPONENT APP CHÍNH ---
+// Ensure this is the ONLY "const App" in the file
 const App: React.FC = () => {
-  // Tạo dữ liệu mẫu để GameView không bị trống
+  // Mocking the data structure expected by GameView
   const sampleData: AppData = {
+    appName: "Hệ Thống Ôn Tập",
+    appLogo: "🎖️",
+    globalBackground: "",
+    backgroundPlaylist: [],
     courses: [],
     tests: [],
-    statistics: { totalStudyTime: 0, completedLessons: 0, averageScore: 0 }
+    statistics: { totalStudyTime: 0, completedLessons: 0, averageScore: 0 },
+    // Add any other properties your AppData type requires
   };
-  //
+
   return (
-    <Router>
+    <BrowserRouter>
       <div className="min-h-screen bg-slate-50">
         <Routes>
-          {/* Đường dẫn chính hiển thị Hệ thống Ôn tập */}
+          {/* Main Entry point focusing on GameView */}
           <Route path="/" element={<GameView data={sampleData} isAdmin={true} />} />
           
-          {/* Nếu sau này đồng chí thêm trang chủ, hãy đổi path thành "/game" */}
+          {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 };
+
+export default App;
 
 export default App;
