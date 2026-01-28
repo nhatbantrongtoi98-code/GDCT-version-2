@@ -11,7 +11,6 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
   authDomain: "gdct-9b57d.firebaseapp.com",
-  // Link này phải khớp với vùng Singapore đồng chí đã tạo
   databaseURL: "https://gdct-9b57d-default-rtdb.asia-southeast1.firebasedatabase.app", 
   projectId: "gdct-9b57d",
   storageBucket: "gdct-9b57d.firebasestorage.app",
@@ -40,72 +39,48 @@ import GameView from './views/GameView';
 import SettingsView from './views/SettingsView';
 
 const App: React.FC = () => {
-  // 1. Khởi tạo người dùng (Giữ LocalStorage để ghi nhớ đăng nhập riêng từng máy)
+  // 1. Khởi tạo người dùng
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
     const saved = localStorage.getItem('military_current_user_v7');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // 2. Khởi tạo dữ liệu ứng dụng (Mặc định ban đầu)
+  // 2. Khởi tạo dữ liệu ứng dụng
   const [appData, setAppData] = useState<AppData>(INITIAL_DATA);
 
-  // --- MỚI: ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE ---
+  // --- ĐỒNG BỘ DỮ LIỆU THỜI GIAN THỰC ---
   useEffect(() => {
-    const dataRef = ref(db, 'military_app_data');
+    const dataRef = ref(db, 'military_app_data/content');
     
-    // Lắng nghe thay đổi từ Cloud - Khi Admin sửa, máy người dùng tự nhảy
     const unsubscribe = onValue(dataRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setAppData(data);
+        console.log("Dữ liệu toàn hệ thống đã cập nhật!");
       } else {
-        // Nếu Cloud trống, đẩy dữ liệu gốc lên lần đầu
-        set(ref(db, 'military_app_data'), INITIAL_DATA);
+        // Nếu Cloud trống, đẩy dữ liệu gốc lên lần đầu vào nhánh content
+        set(ref(db, 'military_app_data/content'), INITIAL_DATA);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Ghi nhớ user đăng nhập
-  useEffect(() => {
-  const database = getDatabase();
-  const militaryRef = ref(database, 'military_app_data');
-
-  // Lắng nghe mọi sự thay đổi từ đường dẫn gốc
-  onValue(militaryRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      // Cập nhật tên hệ thống/logo
-      if (data.config) setAppConfig(data.config);
-      
-      // Cập nhật tất cả nội dung khác (bài học, danh sách, v.v.)
-      if (data.content) setAllData(data.content); 
-      
-      console.log("Máy chiến sĩ đã cập nhật dữ liệu mới từ Admin!");
+  // --- HÀM LƯU TỔNG LỰC LÊN CLOUD ---
+  const saveToCloud = async (newData: AppData) => {
+    try {
+      // Đẩy toàn bộ cục newData lên nhánh content
+      await set(ref(db, 'military_app_data/content'), newData);
+      console.log("Đã đồng bộ mọi thay đổi lên Cloud!");
+    } catch (error) {
+      console.error("Lỗi đồng bộ Cloud:", error);
     }
-  });
-}, []);
+  };
 
-  // --- CÁC HÀM CẬP NHẬT DỮ LIỆU ĐẨY THẲNG LÊN CLOUD ---
-
-  const saveToCloud = async (updatedConfig, updatedData) => {
-  try {
-    const database = getDatabase();
-    // Lưu cả cấu hình hệ thống VÀ toàn bộ nội dung (bài học, thông báo...)
-    await set(ref(database, 'military_app_data'), {
-      config: updatedConfig,
-      content: updatedData, // Đây là phần dữ liệu đồng chí đang bị thiếu
-      lastUpdate: Date.now()
-    });
-    console.log("Đã đồng bộ toàn bộ dữ liệu lên Cloud!");
-  } catch (error) {
-    console.error("Lỗi đồng bộ:", error);
-  }
-};
-
+  // --- CÁC HÀM CẬP NHẬT GIAO DIỆN ---
   const updateGlobal = (key: keyof AppData, value: any) => {
     const newData = { ...appData, [key]: value };
+    setAppData(newData);
     saveToCloud(newData);
   };
 
@@ -114,6 +89,7 @@ const App: React.FC = () => {
       ...appData,
       [key]: { ...appData[key as keyof AppData] as any, title, body, imageUrl, avatarUrl }
     };
+    setAppData(newData);
     saveToCloud(newData);
   };
 
@@ -125,6 +101,7 @@ const App: React.FC = () => {
         [key]: { name, history, imageUrl, avatarUrl }
       }
     };
+    setAppData(newData);
     saveToCloud(newData);
   };
 
@@ -174,6 +151,7 @@ const App: React.FC = () => {
                       l.id === id ? { ...l, title, posterUrl: poster } : l
                     );
                     const newData = { ...appData, lectures: { ...appData.lectures, [cat]: newList } };
+                    setAppData(newData);
                     saveToCloud(newData);
                   }} 
                 />
@@ -184,6 +162,7 @@ const App: React.FC = () => {
                   isAdmin={isAdmin} 
                   onUpdateEntertainment={(updater) => {
                     const newData = { ...appData, entertainment: updater(appData.entertainment) };
+                    setAppData(newData);
                     saveToCloud(newData);
                   }} 
                 />
