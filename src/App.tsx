@@ -3,11 +3,10 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue } from "firebase/database";
 import { 
-  Settings, User, Camera, Save, Layout as LayoutIcon, 
+  Shield, User, Camera, Save, Layout as LayoutIcon, 
   Trophy, BookOpen, Star, Gamepad2 
 } from 'lucide-react';
 
-// --- CẤU HÌNH FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
   authDomain: "gdct-9b57d.firebaseapp.com",
@@ -27,7 +26,6 @@ import { INITIAL_DATA } from './data/initialData';
 import Layout from './components/Layout';
 import AuthScreen from './components/AuthScreen';
 import AIAssistant from './components/AIAssistant';
-
 import HomeView from './views/HomeView';
 import HistoryVNView from './views/HistoryVNView';
 import TraditionView from './views/TraditionView';
@@ -44,16 +42,11 @@ const App: React.FC = () => {
 
   const [appData, setAppData] = useState<AppData>(INITIAL_DATA);
 
-  // ĐỒNG BỘ THỜI GIAN THỰC
   useEffect(() => {
     const dataRef = ref(db, 'military_app_data');
     const unsubscribe = onValue(dataRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        setAppData(data);
-      } else {
-        set(ref(db, 'military_app_data'), INITIAL_DATA);
-      }
+      if (data) setAppData(data);
     });
     return () => unsubscribe();
   }, []);
@@ -62,7 +55,7 @@ const App: React.FC = () => {
     try {
       await set(ref(db, 'military_app_data'), newData);
     } catch (error) {
-      console.error("Lỗi đồng bộ:", error);
+      console.error("Lỗi:", error);
     }
   };
 
@@ -72,42 +65,23 @@ const App: React.FC = () => {
     saveToCloud(newData);
   };
 
-  const updateSection = (key: keyof AppData, title: string, body: string, imageUrl?: string, avatarUrl?: string) => {
+  const updateSection = (key: keyof AppData, title: string, body: string, imageUrl?: string) => {
     const newData = {
       ...appData,
-      [key]: { ...appData[key as keyof AppData] as any, title, body, imageUrl, avatarUrl }
+      [key]: { ...appData[key as keyof AppData] as any, title, body, imageUrl }
     };
     setAppData(newData);
     saveToCloud(newData);
   };
 
   const updateTradition = (key: string, name: string, history: string, imageUrl?: string, avatarUrl?: string) => {
-  setAppData(prevData => {
     const newData = {
-      ...prevData,
-      tradition: {
-        ...prevData.tradition,
-        [key]: { 
-          ...prevData.tradition[key], // Giữ lại các thuộc tính cũ
-          name, 
-          history, 
-          imageUrl: imageUrl || prevData.tradition[key]?.imageUrl || "", 
-          avatarUrl: avatarUrl || prevData.tradition[key]?.avatarUrl || "" 
-        }
-      }
+      ...appData,
+      tradition: { ...appData.tradition, [key]: { name, history, imageUrl, avatarUrl } }
     };
-    // Đẩy lên Cloud ngay khi cập nhật state
+    setAppData(newData);
     saveToCloud(newData);
-    return newData;
-  });
-};
-  
-  // Bước 1: Cập nhật ngay lập tức lên màn hình Admin
-  setAppData(newData);
-  
-  // Bước 2: Đẩy lên Firebase để máy chiến sĩ cũng thấy
-  saveToCloud(newData); 
-};
+  };
 
   if (!currentUser) return <AuthScreen data={appData} onLogin={setCurrentUser} />;
   const isAdmin = currentUser.role === 'admin';
