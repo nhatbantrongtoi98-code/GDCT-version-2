@@ -50,18 +50,23 @@ const App: React.FC = () => {
 
   // --- ĐỒNG BỘ DỮ LIỆU THỜI GIAN THỰC ---
   useEffect(() => {
-    const dataRef = ref(db, 'military_app_data/content');
-    
-    const unsubscribe = onValue(dataRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setAppData(data);
-        console.log("Dữ liệu toàn hệ thống đã cập nhật!");
-      } else {
-        // Nếu Cloud trống, đẩy dữ liệu gốc lên lần đầu vào nhánh content
-        set(ref(db, 'military_app_data/content'), INITIAL_DATA);
-      }
-    });
+  // Lắng nghe trực tiếp vào nhánh military_app_data
+  const dataRef = ref(db, 'military_app_data');
+  
+  const unsubscribe = onValue(dataRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Cập nhật toàn bộ kho dữ liệu cho máy chiến sĩ
+      setAppData(data); 
+      console.log("Đã nhận dữ liệu chi tiết từ Cloud!");
+    } else {
+      // Nếu Cloud trống (do ta vừa xóa), đẩy lại dữ liệu gốc lên
+      set(ref(db, 'military_app_data'), INITIAL_DATA);
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
 
     return () => unsubscribe();
   }, []);
