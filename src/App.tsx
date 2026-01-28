@@ -50,7 +50,43 @@ const App: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+  
+// 1. Cập nhật lại logic đồng bộ để chạy mượt mà trên cùng 1 tab
+// CHỈ GIỮ LẠI MỘT ĐOẠN DUY NHẤT NÀY
+useEffect(() => {
+  const syncUser = () => {
+    const savedUser = localStorage.getItem('military_current_user_v7');
+    const savedDisplayName = localStorage.getItem('user_display_name');
+    const savedAvatar = localStorage.getItem('user_avatar');
 
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      
+      // 1. Tạo đối tượng user mới nhất từ các nguồn lưu trữ
+      const updatedUser = {
+        ...user,
+        name: savedDisplayName || user.name,
+        avatar: savedAvatar || user.avatar
+      };
+
+      // 2. Cập nhật State để Sidebar/Layout thay đổi ngay lập tức
+      setCurrentUser(updatedUser);
+      
+      // 3. Ghi đè lại khóa chính để dữ liệu luôn đồng nhất khi F5
+      localStorage.setItem('military_current_user_v7', JSON.stringify(updatedUser));
+    }
+  };
+
+  // Đăng ký các sự kiện lắng nghe
+  window.addEventListener('storage', syncUser);
+  window.addEventListener('user-data-updated', syncUser);
+
+  // Hủy đăng ký khi component bị unmount để tránh rò rỉ bộ nhớ
+  return () => {
+    window.removeEventListener('storage', syncUser);
+    window.removeEventListener('user-data-updated', syncUser);
+  };
+}, []); // Chạy 1 lần duy nhất khi khởi tạo
   const saveToCloud = async (newData: AppData) => {
     try {
       await set(ref(db, 'military_app_data'), newData);
