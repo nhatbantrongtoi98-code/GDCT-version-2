@@ -20,11 +20,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser, appName, appLogo
 
   const menuItems = [
     { path: '/', label: 'Trang chủ', icon: Home },
-    { path: '/history', label: 'Lịch sử QĐ', icon: History },
-    { path: '/tradition', label: 'Truyền thống', icon: Shield },
-    { path: '/lectures', label: 'Bài giảng', icon: Monitor },
-    { path: '/entertainment', label: 'Giải trí', icon: Music },
-    { path: '/game', label: 'Ôn luyện', icon: Gamepad2 },
+    { path: '/history', label: 'Lịch sử Dân tộc Việt Nam', icon: History },
+    { path: '/tradition', label: 'Lịch sử, truyền thống đơn vị', icon: Shield },
+    { path: '/lectures', label: 'Bài giảng chính trị', icon: Monitor },
+    { path: '/entertainment', label: 'Góc Giải trí', icon: Music },
+    { path: '/game', label: 'chiến sĩ thông thái', icon: Gamepad2 },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
