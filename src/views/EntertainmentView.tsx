@@ -1,146 +1,123 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Music, Video, Plus, Trash2, Edit2, Play, 
-  Pause, FileAudio, FileVideo, Volume2
+  ExternalLink, FileAudio, FileVideo, Save, X 
 } from 'lucide-react';
 
-interface MediaItem {
+interface MediaLink {
   id: string;
   name: string;
   type: 'audio' | 'video';
-  url: string; 
+  embedUrl: string; // Link nhúng từ YouTube, SoundCloud...
 }
 
 const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
-  const [mediaList, setMediaList] = useState<MediaItem[]>([]);
-  const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [mediaLinks, setMediaLinks] = useState<MediaLink[]>([
+    { id: '1', name: '15 Bài hát quy định (Playlist)', type: 'audio', embedUrl: 'https://www.youtube.com/embed/videoseries?list=PLxxx' },
+    { id: '2', name: 'Vũ điệu hành quân', type: 'video', embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+  ]);
 
-  // Xử lý tải file và tạo đường dẫn nội bộ (Blob URL)
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'audio' | 'video') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Tạo đường dẫn trực tiếp giúp trình duyệt phát nhạc ngay
-      const objectUrl = URL.createObjectURL(file);
-      const newItem: MediaItem = {
-        id: Date.now().toString(),
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        type: type,
-        url: objectUrl
-      };
-      setMediaList(prev => [...prev, newItem]);
-    }
+  const addLink = (type: 'audio' | 'video') => {
+    const newLink: MediaLink = {
+      id: Date.now().toString(),
+      name: type === 'audio' ? 'Tên bài hát mới' : 'Tên điệu vũ mới',
+      type: type,
+      embedUrl: ''
+    };
+    setMediaLinks([...mediaLinks, newLink]);
   };
 
-  const playAudio = (item: MediaItem) => {
-    if (!audioRef.current) return;
-    
-    if (currentPlaying === item.id) {
-      audioRef.current.pause();
-      setCurrentPlaying(null);
-    } else {
-      audioRef.current.src = item.url;
-      // Trình duyệt yêu cầu tương tác người dùng trước khi phát
-      audioRef.current.play().catch(error => {
-        console.error("Lỗi phát nhạc:", error);
-        alert("Trình duyệt chặn tự động phát. Vui lòng nhấn nút Play một lần nữa.");
-      });
-      setCurrentPlaying(item.id);
-    }
+  const updateLink = (id: string, field: keyof MediaLink, value: string) => {
+    setMediaLinks(mediaLinks.map(link => link.id === id ? { ...link, [field]: value } : link));
   };
 
-  const deleteItem = (id: string, url: string) => {
-    if (window.confirm("Đồng chí có chắc chắn muốn xóa mục này?")) {
-      URL.revokeObjectURL(url); // Giải phóng bộ nhớ máy tính
-      setMediaList(prev => prev.filter(item => item.id !== id));
-      if (currentPlaying === id) {
-        audioRef.current?.pause();
-        setCurrentPlaying(null);
-      }
+  const deleteLink = (id: string) => {
+    if (window.confirm("Xóa link nhúng này?")) {
+      setMediaLinks(mediaLinks.filter(l => l.id !== id));
     }
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Trình phát nhạc ẩn */}
-      <audio ref={audioRef} onEnded={() => setCurrentPlaying(null)} />
-
       {/* Header */}
-      <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-5">
-          <div className={`p-5 rounded-3xl text-white shadow-lg transition-all ${currentPlaying ? 'bg-red-600 animate-pulse' : 'bg-red-800'}`}>
-            <Music size={32} />
-          </div>
+          <div className="p-4 bg-red-700 rounded-3xl text-white shadow-lg"><Music size={32} /></div>
           <div>
             <h2 className="text-3xl font-black text-red-800 uppercase italic">GÓC GIẢI TRÍ</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">15 bài hát quy định & Các điệu vũ quân đội</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hệ thống nhúng dữ liệu trực tuyến (Cloud Media)</p>
           </div>
         </div>
         
         {isAdmin && (
-          <div className="flex gap-3">
-            <label className="flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-2xl font-black text-[10px] cursor-pointer hover:bg-blue-700 shadow-lg">
-              <Plus size={14} /> THÊM NHẠC (MP3)
-              <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleFileUpload(e, 'audio')} />
-            </label>
-            <label className="flex items-center gap-2 bg-purple-600 text-white px-5 py-3 rounded-2xl font-black text-[10px] cursor-pointer hover:bg-purple-700 shadow-lg">
-              <Plus size={14} /> THÊM VŨ ĐIỆU (MP4)
-              <input type="file" accept="video/*" className="hidden" onChange={(e) => handleFileUpload(e, 'video')} />
-            </label>
-          </div>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-[10px] flex items-center gap-2 hover:bg-black transition-all"
+          >
+            {isEditing ? <Save size={16}/> : <Edit2 size={16}/>}
+            {isEditing ? "HOÀN TẤT CHỈNH SỬA" : "QUẢN LÝ LINK NHÚNG"}
+          </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* CỘT NHẠC */}
-        <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50">
-          <h3 className="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-3 border-b pb-4">
-            <FileAudio className="text-red-700" /> DANH SÁCH BÀI HÁT
-          </h3>
-          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-            {mediaList.filter(i => i.type === 'audio').length === 0 && (
-              <p className="text-center py-10 text-slate-400 font-bold italic text-xs uppercase">Chưa có bài hát nào được tải lên</p>
+        {/* CỘT NHẠC (Nhúng link âm thanh) */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center px-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase flex items-center gap-3">
+              <FileAudio className="text-red-700" /> 15 BÀI HÁT QUY ĐỊNH
+            </h3>
+            {isAdmin && isEditing && (
+              <button onClick={() => addLink('audio')} className="text-[10px] font-black text-blue-600 hover:underline">+ THÊM LINK</button>
             )}
-            {mediaList.filter(i => i.type === 'audio').map((item, idx) => (
-              <div key={item.id} className={`group flex items-center justify-between p-4 rounded-2xl transition-all ${currentPlaying === item.id ? 'bg-red-50 ring-1 ring-red-200' : 'bg-slate-50 hover:bg-slate-100'}`}>
-                <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-black text-slate-300">{(idx + 1).toString().padStart(2, '0')}</span>
-                  <span className="text-[11px] font-bold text-slate-700 uppercase">{item.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => playAudio(item)} className={`p-3 rounded-xl shadow-md transition-all ${currentPlaying === item.id ? 'bg-red-700 text-white' : 'bg-white text-red-700 hover:scale-110'}`}>
-                    {currentPlaying === item.id ? <Pause size={14} fill="currentColor"/> : <Play size={14} fill="currentColor"/>}
-                  </button>
-                  {isAdmin && (
-                    <button onClick={() => deleteItem(item.id, item.url)} className="p-3 text-slate-300 hover:text-red-600"><Trash2 size={14}/></button>
-                  )}
-                </div>
+          </div>
+          
+          <div className="space-y-4">
+            {mediaLinks.filter(l => l.type === 'audio').map(link => (
+              <div key={link.id} className="bg-white p-6 rounded-[2rem] border border-slate-50 shadow-sm space-y-4">
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input className="w-full p-2 border rounded-xl text-xs font-bold" value={link.name} onChange={e => updateLink(link.id, 'name', e.target.value)} placeholder="Tên bài hát" />
+                    <input className="w-full p-2 border rounded-xl text-xs" value={link.embedUrl} onChange={e => updateLink(link.id, 'embedUrl', e.target.value)} placeholder="Link nhúng (YouTube Embed URL)" />
+                    <button onClick={() => deleteLink(link.id)} className="text-red-500 text-[10px] font-bold">XÓA</button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-xs font-black text-slate-600 uppercase italic block">{link.name}</span>
+                    <iframe src={link.embedUrl} className="w-full h-[150px] rounded-2xl" allow="autoplay"></iframe>
+                  </>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* CỘT VIDEO */}
-        <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50">
-          <h3 className="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-3 border-b pb-4">
-            <FileVideo className="text-blue-700" /> CÁC ĐIỆU VŨ QUÂN ĐỘI
-          </h3>
-          <div className="space-y-6">
-            {mediaList.filter(i => i.type === 'video').length === 0 && (
-              <div className="aspect-video bg-slate-900 rounded-[2rem] flex flex-col items-center justify-center text-slate-500 border-4 border-dashed border-slate-100">
-                <Video size={48} className="mb-2 opacity-20" />
-                <span className="text-[10px] font-black uppercase italic">Chưa có dữ liệu Video</span>
-              </div>
+        {/* CỘT VŨ ĐIỆU (Nhúng link video) */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center px-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase flex items-center gap-3">
+              <FileVideo className="text-blue-700" /> CÁC ĐIỆU VŨ QUÂN ĐỘI
+            </h3>
+            {isAdmin && isEditing && (
+              <button onClick={() => addLink('video')} className="text-[10px] font-black text-blue-600 hover:underline">+ THÊM LINK</button>
             )}
-            {mediaList.filter(i => i.type === 'video').map((item) => (
-              <div key={item.id} className="space-y-3 group">
-                <div className="relative aspect-video bg-black rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-slate-50">
-                  <video src={item.url} controls className="w-full h-full object-contain" />
-                </div>
-                <div className="flex justify-between items-center px-4">
-                  <span className="text-[10px] font-black text-slate-500 uppercase italic">{item.name}</span>
-                  {isAdmin && <button onClick={() => deleteItem(item.id, item.url)} className="text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={14}/></button>}
-                </div>
+          </div>
+
+          <div className="space-y-4">
+            {mediaLinks.filter(l => l.type === 'video').map(link => (
+              <div key={link.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-50 shadow-sm space-y-4">
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input className="w-full p-2 border rounded-xl text-xs font-bold" value={link.name} onChange={e => updateLink(link.id, 'name', e.target.value)} />
+                    <input className="w-full p-2 border rounded-xl text-xs" value={link.embedUrl} onChange={e => updateLink(link.id, 'embedUrl', e.target.value)} />
+                    <button onClick={() => deleteLink(link.id)} className="text-red-500 text-[10px] font-bold">XÓA</button>
+                  </div>
+                ) : (
+                  <div className="aspect-video rounded-3xl overflow-hidden bg-black shadow-lg">
+                    <iframe src={link.embedUrl} className="w-full h-full" allowFullScreen></iframe>
+                  </div>
+                )}
               </div>
             ))}
           </div>
