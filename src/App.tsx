@@ -69,9 +69,23 @@ const App: React.FC = () => {
 
   // Ghi nhớ user đăng nhập
   useEffect(() => {
-    if (currentUser) localStorage.setItem('military_current_user_v7', JSON.stringify(currentUser));
-    else localStorage.removeItem('military_current_user_v7');
-  }, [currentUser]);
+  const database = getDatabase();
+  const militaryRef = ref(database, 'military_app_data');
+
+  // Lắng nghe mọi sự thay đổi từ đường dẫn gốc
+  onValue(militaryRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Cập nhật tên hệ thống/logo
+      if (data.config) setAppConfig(data.config);
+      
+      // Cập nhật tất cả nội dung khác (bài học, danh sách, v.v.)
+      if (data.content) setAllData(data.content); 
+      
+      console.log("Máy chiến sĩ đã cập nhật dữ liệu mới từ Admin!");
+    }
+  });
+}, []);
 
   // --- CÁC HÀM CẬP NHẬT DỮ LIỆU ĐẨY THẲNG LÊN CLOUD ---
 
