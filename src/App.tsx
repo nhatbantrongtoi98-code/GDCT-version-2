@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue } from "firebase/database";
-import { 
-  Shield, User, Camera, Save, Layout as LayoutIcon, 
-  Trophy, BookOpen, Star, Gamepad2 
-} from 'lucide-react';
+
+// Xóa bỏ các icon thừa không sử dụng để tránh lỗi Build Failed
+// Chỉ giữ lại Lucide nếu đồng chí thực sự dùng icon trong file này.
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
@@ -21,6 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Giữ nguyên các phần import views và components bên dưới của đồng chí...
 import { AppData, UserAccount } from './types';
 import { INITIAL_DATA } from './data/initialData';
 import Layout from './components/Layout';
@@ -51,42 +51,35 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
   
-// 1. Cập nhật lại logic đồng bộ để chạy mượt mà trên cùng 1 tab
-// CHỈ GIỮ LẠI MỘT ĐOẠN DUY NHẤT NÀY
-useEffect(() => {
-  const syncUser = () => {
-    const savedUser = localStorage.getItem('military_current_user_v7');
-    const savedDisplayName = localStorage.getItem('user_display_name');
-    const savedAvatar = localStorage.getItem('user_avatar');
+  // Logic đồng bộ User - Giữ nguyên như đồng chí đã viết (Rất chuẩn)
+  useEffect(() => {
+    const syncUser = () => {
+      const savedUser = localStorage.getItem('military_current_user_v7');
+      const savedDisplayName = localStorage.getItem('user_display_name');
+      const savedAvatar = localStorage.getItem('user_avatar');
 
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      
-      // 1. Tạo đối tượng user mới nhất từ các nguồn lưu trữ
-      const updatedUser = {
-        ...user,
-        name: savedDisplayName || user.name,
-        avatar: savedAvatar || user.avatar
-      };
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        const updatedUser = {
+          ...user,
+          name: savedDisplayName || user.name,
+          avatar: savedAvatar || user.avatar
+        };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('military_current_user_v7', JSON.stringify(updatedUser));
+      }
+    };
 
-      // 2. Cập nhật State để Sidebar/Layout thay đổi ngay lập tức
-      setCurrentUser(updatedUser);
-      
-      // 3. Ghi đè lại khóa chính để dữ liệu luôn đồng nhất khi F5
-      localStorage.setItem('military_current_user_v7', JSON.stringify(updatedUser));
-    }
-  };
+    window.addEventListener('storage', syncUser);
+    window.addEventListener('user-data-updated', syncUser);
 
-  // Đăng ký các sự kiện lắng nghe
-  window.addEventListener('storage', syncUser);
-  window.addEventListener('user-data-updated', syncUser);
+    return () => {
+      window.removeEventListener('storage', syncUser);
+      window.removeEventListener('user-data-updated', syncUser);
+    };
+  }, []);
 
-  // Hủy đăng ký khi component bị unmount để tránh rò rỉ bộ nhớ
-  return () => {
-    window.removeEventListener('storage', syncUser);
-    window.removeEventListener('user-data-updated', syncUser);
-  };
-}, []); // Chạy 1 lần duy nhất khi khởi tạo
+  // Các hàm saveToCloud, updateGlobal, updateSection... giữ nguyên
   const saveToCloud = async (newData: AppData) => {
     try {
       await set(ref(db, 'military_app_data'), newData);
@@ -126,25 +119,21 @@ useEffect(() => {
     <Router>
       <div className="min-h-screen" style={{ backgroundImage: appData.globalBackground ? `url(${appData.globalBackground})` : 'none', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
         <div className="bg-white/90 min-h-screen backdrop-blur-md">
-          <Layout playlist={appData.backgroundPlaylist} currentUser={currentUser} appName={appData.appName} appLogo={appData.appLogo} onLogout={() => {
-  localStorage.removeItem('military_current_user_v7');
-  setCurrentUser(null);
-}>
+          <Layout 
+            playlist={appData.backgroundPlaylist} 
+            currentUser={currentUser} 
+            appName={appData.appName} 
+            appLogo={appData.appLogo} 
+            onLogout={() => {
+              localStorage.removeItem('military_current_user_v7');
+              setCurrentUser(null);
+            }}
+          >
             <Routes>
               <Route path="/" element={<HomeView data={appData} isAdmin={isAdmin} onUpdate={updateSection} onUpdateGlobal={updateGlobal} onUpdatePlaylist={(list) => updateGlobal('backgroundPlaylist', list)} />} />
               <Route path="/history" element={<HistoryVNView data={appData} isAdmin={isAdmin} onUpdate={updateSection} />} />
               <Route path="/tradition" element={<TraditionView data={appData} isAdmin={isAdmin} onUpdate={updateTradition} />} />
-              {/* Tìm đoạn /lectures và thay bằng đoạn này */}
-<Route 
-  path="/lectures" 
-  element={
-    <LecturesView 
-      data={appData} 
-      isAdmin={isAdmin} 
-      onUpdateGlobal={updateGlobal} 
-    />
-  } 
-/>
+              <Route path="/lectures" element={<LecturesView data={appData} isAdmin={isAdmin} onUpdateGlobal={updateGlobal} />} />
               <Route path="/entertainment" element={<EntertainmentView data={appData} isAdmin={isAdmin} onUpdateEntertainment={(updater) => {
                 const newData = { ...appData, entertainment: updater(appData.entertainment) };
                 setAppData(newData);
