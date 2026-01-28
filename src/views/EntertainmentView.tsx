@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Music, Video, Edit2, FileAudio, FileVideo, Save, AlertCircle 
 } from 'lucide-react';
@@ -9,16 +9,25 @@ interface MediaLink {
   embedUrl: string;
 }
 
-const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
+// 1. Thêm Props để nhận dữ liệu và hàm lưu từ App.tsx
+const EntertainmentView: React.FC<{ 
+  isAdmin: boolean; 
+  data: any; 
+  onUpdateEntertainment: (updater: (prev: any) => any) => void 
+}> = ({ isAdmin, data, onUpdateEntertainment }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [songs, setSongs] = useState<MediaLink[]>(
-    Array.from({ length: 15 }, (_, i) => ({ id: `s-${i}`, name: `Bài hát số ${i + 1}`, embedUrl: '' }))
-  );
-  const [dances, setDances] = useState<MediaLink[]>(
-    Array.from({ length: 5 }, (_, i) => ({ id: `d-${i}`, name: `Điệu vũ số ${i + 1}`, embedUrl: '' }))
-  );
+  
+  // 2. Đồng bộ hóa State nội bộ với dữ liệu từ Firebase
+  const [songs, setSongs] = useState<MediaLink[]>([]);
+  const [dances, setDances] = useState<MediaLink[]>([]);
 
-  // Bộ lọc thông minh: Tự sửa link YouTube hoặc SoundCloud
+  useEffect(() => {
+    if (data?.entertainment) {
+      setSongs(data.entertainment.songs || []);
+      setDances(data.entertainment.dances || []);
+    }
+  }, [data]);
+
   const formatEmbedUrl = (url: string) => {
     let cleanUrl = url.trim();
     if (cleanUrl.includes('youtube.com/watch?v=')) {
@@ -27,7 +36,6 @@ const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
     if (cleanUrl.includes('youtu.be/')) {
       return cleanUrl.replace('youtu.be/', 'youtube.com/embed/') + "?rel=0&autoplay=0";
     }
-    // Hỗ trợ SoundCloud nếu đồng chí muốn đổi nguồn nhạc
     if (cleanUrl.includes('soundcloud.com') && !cleanUrl.includes('api.soundcloud.com')) {
       return `https://w.soundcloud.com/player/?url=${encodeURIComponent(cleanUrl)}&color=%23ff5500&auto_play=false&hide_related=true`;
     }
@@ -39,9 +47,18 @@ const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
     setList(list.map(item => item.id === id ? { ...item, [field]: finalValue } : item));
   };
 
+  // 3. Hàm thực hiện lưu dữ liệu lên Cloud
+  const handleSave = () => {
+    onUpdateEntertainment((prev: any) => ({
+      ...prev,
+      songs: songs,
+      dances: dances
+    }));
+    setIsEditing(false);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20">
-      {/* Header */}
       <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-5">
           <div className="p-4 bg-red-800 rounded-3xl text-white shadow-lg"><Music size={32} /></div>
@@ -53,7 +70,7 @@ const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
         
         {isAdmin && (
           <button 
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={isEditing ? handleSave : () => setIsEditing(true)}
             className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[10px] shadow-xl transition-all ${isEditing ? 'bg-green-600 text-white' : 'bg-slate-800 text-white'}`}
           >
             {isEditing ? <Save size={16}/> : <Edit2 size={16}/>}
@@ -63,7 +80,6 @@ const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* CỘT NHẠC */}
         <div className="space-y-6">
           <h3 className="text-sm font-black text-slate-800 uppercase flex items-center gap-3 border-b pb-4 ml-4">
             <FileAudio className="text-red-700" /> DANH SÁCH BÀI HÁT
@@ -101,7 +117,6 @@ const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
           </div>
         </div>
 
-        {/* CỘT VIDEO */}
         <div className="space-y-6">
           <h3 className="text-sm font-black text-slate-800 uppercase flex items-center gap-3 border-b pb-4 ml-4">
             <FileVideo className="text-blue-700" /> 5 ĐIỆU VŨ QUÂN ĐỘI
@@ -133,7 +148,6 @@ const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
         </div>
       </div>
 
-      {/* Thông báo hỗ trợ lỗi bản quyền */}
       {!isEditing && (
         <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex gap-4 items-start">
           <AlertCircle className="text-amber-600 shrink-0" size={20} />
