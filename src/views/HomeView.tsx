@@ -19,28 +19,29 @@ const HomeView: React.FC<HomeViewProps> = ({ data, isAdmin, onUpdate, onUpdateGl
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: any) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024 && type !== 'playlist') {
-      alert("File quá lớn! Vui lòng chọn file dưới 2MB.");
-      return;
+  // Giới hạn nhạc dưới 10MB để tránh tràn bộ nhớ trình duyệt
+  if (type === 'playlist' && file.size > 10 * 1024 * 1024) {
+    alert("File nhạc quá lớn! Vui lòng chọn file dưới 10MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const base64String = reader.result as string;
+    if (type === 'playlist') {
+      const title = file.name.replace(/\.[^/.]+$/, "");
+      // CHÚ Ý: Cập nhật playlist mới
+      onUpdatePlaylist([...data.backgroundPlaylist, { title, url: base64String }]);
+      alert("Đã thêm nhạc thành công!");
+    } else {
+      onUpdateGlobal(type, base64String);
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      if (type === 'playlist') {
-        const title = file.name.replace(/\.[^/.]+$/, "");
-        onUpdatePlaylist([...data.backgroundPlaylist, { title, url: base64String }]);
-      } else if (type === 'introImg') {
-        setEditForm(prev => ({ ...prev, imageUrl: base64String }));
-      } else {
-        onUpdateGlobal(type, base64String);
-      }
-    };
-    reader.readAsDataURL(file);
   };
+  reader.readAsDataURL(file);
+};
 
   const saveContent = () => {
     onUpdate('intro', editForm.title, editForm.body, editForm.imageUrl);
