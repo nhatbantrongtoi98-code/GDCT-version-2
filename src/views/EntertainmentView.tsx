@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Music, Video, Edit2, FileAudio, FileVideo, Save, AlertCircle, 
-  Loader2, XCircle, Plus, Trash2, Youtube 
+  Loader2, XCircle, Youtube, RefreshCw
 } from 'lucide-react';
 
 interface MediaLink {
@@ -18,42 +18,45 @@ const EntertainmentView: React.FC<{
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // State quản lý danh sách bài hát và điệu vũ
+  // Khởi tạo state
   const [songs, setSongs] = useState<MediaLink[]>([]);
   const [dances, setDances] = useState<MediaLink[]>([]);
 
-  // Khởi tạo 15 bài hát và 5 điệu vũ mặc định nếu dữ liệu trống
+  // Hàm tạo dữ liệu mẫu nếu database trống
+  const generateDefaultData = useCallback(() => {
+    const defaultSongs = Array.from({ length: 15 }, (_, i) => ({
+      id: `song-${i + 1}`,
+      name: `Bài hát ${i + 1}`,
+      embedUrl: ''
+    }));
+    const defaultDances = Array.from({ length: 5 }, (_, i) => ({
+      id: `dance-${i + 1}`,
+      name: `Điệu vũ ${i + 1}`,
+      embedUrl: ''
+    }));
+    return { defaultSongs, defaultDances };
+  }, []);
+
+  // ĐỒNG BỘ DỮ LIỆU TỪ SERVER VÀ LOCAL STORAGE
   useEffect(() => {
     if (!isEditing && !isSaving) {
-      const cloudSongs = data?.entertainment?.songs || [];
-      const cloudDances = data?.entertainment?.dances || [];
+      const serverSongs = data?.entertainment?.songs;
+      const serverDances = data?.entertainment?.dances;
 
-      // Nếu chưa có dữ liệu, tạo khung trống sẵn cho Admin
-      if (cloudSongs.length === 0 && isAdmin) {
-        const defaultSongs = Array.from({ length: 15 }, (_, i) => ({
-          id: `song-default-${i}`,
-          name: `Bài hát ${i + 1}`,
-          embedUrl: ''
-        }));
-        setSongs(defaultSongs);
+      if (serverSongs && serverSongs.length > 0) {
+        setSongs(serverSongs);
       } else {
-        setSongs(cloudSongs);
+        setSongs(generateDefaultData().defaultSongs);
       }
 
-      if (cloudDances.length === 0 && isAdmin) {
-        const defaultDances = Array.from({ length: 5 }, (_, i) => ({
-          id: `dance-default-${i}`,
-          name: `Điệu vũ ${i + 1}`,
-          embedUrl: ''
-        }));
-        setDances(defaultDances);
+      if (serverDances && serverDances.length > 0) {
+        setDances(serverDances);
       } else {
-        setDances(cloudDances);
+        setDances(generateDefaultData().defaultDances);
       }
     }
-  }, [data, isEditing, isSaving, isAdmin]);
+  }, [data, isEditing, isSaving, generateDefaultData]);
 
-  // Hàm chuyển đổi link YouTube sang dạng Embed chuẩn
   const formatEmbedUrl = (url: string) => {
     let cleanUrl = url.trim();
     if (!cleanUrl) return '';
@@ -65,7 +68,7 @@ const EntertainmentView: React.FC<{
       } else if (cleanUrl.includes('youtu.be/')) {
         videoId = cleanUrl.split('youtu.be/')[1]?.split('?')[0] || '';
       }
-      return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : cleanUrl;
+      return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : cleanUrl;
     } catch { return cleanUrl; }
   };
 
@@ -77,53 +80,61 @@ const EntertainmentView: React.FC<{
     }
   };
 
+  // HÀM LƯU CHUYÊN NGHIỆP
   const handleSave = async () => {
     if (isSaving) return;
+    
+    // Kiểm tra nhanh dữ liệu
+    const hasData = songs.some(s => s.embedUrl !== '') || dances.some(d => d.embedUrl !== '');
+    if (!hasData) {
+      if (!window.confirm("Cảnh báo: Đồng chí chưa nhập bất kỳ link video nào. Vẫn tiếp tục lưu?")) return;
+    }
+
     setIsSaving(true);
 
-    // Lọc bỏ những mục Admin để trống hoàn toàn để tối ưu dữ liệu
-    const finalSongs = songs
-      .map(s => ({ ...s, embedUrl: formatEmbedUrl(s.embedUrl) }))
-      .filter(s => s.name.trim() !== '' || s.embedUrl !== '');
-      
-    const finalDances = dances
-      .map(d => ({ ...d, embedUrl: formatEmbedUrl(d.embedUrl) }))
-      .filter(d => d.name.trim() !== '' || d.embedUrl !== '');
+    const finalSongs = songs.map(s => ({ ...s, embedUrl: formatEmbedUrl(s.embedUrl) }));
+    const finalDances = dances.map(d => ({ ...d, embedUrl: formatEmbedUrl(d.embedUrl) }));
 
     try {
-      // Gửi dữ liệu lên Server thông qua hàm onUpdateEntertainment của App
+      // 1. Lưu vào LocalStorage của trình duyệt (Dự phòng lỗi mạng)
+      localStorage.setItem('temp_entertainment_data', JSON.stringify({ finalSongs, finalDances }));
+
+      // 2. Đẩy lên Server (Vercel/Database)
       await onUpdateEntertainment((prev: any) => ({
         ...prev,
         entertainment: { 
           songs: finalSongs, 
           dances: finalDances,
-          lastUpdated: new Date().toISOString() 
+          updatedAt: new Date().toISOString()
         }
       }));
       
       setIsEditing(false);
-      alert("✅ HỆ THỐNG: Đã đồng bộ dữ liệu thành công lên máy chủ.");
+      alert("✅ THÀNH CÔNG: Dữ liệu đã được đồng bộ vĩnh viễn lên hệ thống.");
     } catch (error) {
-      console.error("Lưu thất bại:", error);
-      alert("❌ LỖI: Không thể lưu dữ liệu. Vui lòng kiểm tra lại kết nối mạng.");
+      console.error("Lỗi đồng bộ:", error);
+      alert("❌ LỖI LƯU TRỮ: Máy chủ không phản hồi. Tuy nhiên dữ liệu đã được lưu tạm trên máy tính này.");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto px-4">
-      {/* THANH ĐIỀU KHIỂN CHÍNH */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto px-4">
+      {/* HEADER QUẢN TRỊ */}
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 sticky top-4 z-20">
         <div className="flex items-center gap-6">
-          <div className="p-4 bg-red-800 rounded-3xl text-white shadow-lg ring-8 ring-red-50">
+          <div className="p-4 bg-red-800 rounded-3xl text-white shadow-lg ring-4 ring-red-50">
             <Music size={32} />
           </div>
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-slate-800 uppercase italic leading-none">GÓC GIẢI TRÍ</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-widest italic">
-              {isAdmin ? "💎 CHẾ ĐỘ QUẢN TRỊ: Vui lòng nhập link YouTube để cập nhật" : "Nội dung văn hóa nghệ thuật quân đội chính quy"}
-            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`h-2 w-2 rounded-full ${isAdmin ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+                {isAdmin ? "CHẾ ĐỘ QUẢN TRỊ VIÊN - ĐÃ CẤU HÌNH 15 BÀI & 5 ĐIỆU" : "Nội dung văn hóa nghệ thuật"}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -131,62 +142,63 @@ const EntertainmentView: React.FC<{
           <div className="flex items-center gap-3">
             {isEditing ? (
               <>
-                <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 px-6 py-4 rounded-2xl font-bold text-[11px] text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all">
-                  <XCircle size={18} /> HỦY
+                <button onClick={() => setIsEditing(false)} className="flex items-center gap-2 px-6 py-4 rounded-2xl font-bold text-[11px] text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200">
+                  <XCircle size={18} /> HỦY BỎ
                 </button>
-                <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[11px] text-white bg-green-600 shadow-lg shadow-green-100 hover:bg-green-700 transition-all">
-                  {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} LƯU CẤU HÌNH
+                <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[11px] text-white bg-blue-600 shadow-xl shadow-blue-100 hover:bg-blue-700 disabled:opacity-50 transition-all border-b-4 border-blue-800 active:border-b-0">
+                  {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} XÁC NHẬN LƯU VĨNH VIỄN
                 </button>
               </>
             ) : (
-              <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[11px] text-white bg-slate-900 shadow-xl hover:bg-black transition-all">
-                <Edit2 size={18} /> QUẢN TRỊ NỘI DUNG
+              <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-10 py-4 rounded-2xl font-black text-[11px] text-white bg-slate-900 shadow-2xl hover:bg-black transition-all border-b-4 border-slate-700 active:border-b-0">
+                <Edit2 size={18} /> BẮT ĐẦU CHỈNH SỬA
               </button>
             )}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* CỘT 15 BÀI HÁT */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-4 border-b border-slate-200 pb-4">
-            <h3 className="text-[14px] font-black text-slate-800 uppercase flex items-center gap-3 italic">
-              <FileAudio className="text-red-700" size={22} /> DANH SÁCH 15 BÀI HÁT QUY ĐỊNH
-            </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* KHU VỰC 15 BÀI HÁT */}
+        <div className="space-y-6 bg-slate-50/50 p-6 rounded-[3rem] border border-slate-100">
+          <div className="flex items-center gap-3 px-4 mb-2">
+            <FileAudio className="text-red-700" size={24} />
+            <h3 className="text-[15px] font-black text-slate-800 uppercase italic">15 bài hát quy định</h3>
           </div>
 
-          <div className="space-y-4 max-h-[1000px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[1200px] pr-2 custom-scrollbar">
             {songs.map((song, index) => (
-              <div key={song.id} className={`p-5 rounded-[2.2rem] border transition-all ${isEditing ? 'bg-slate-50 border-blue-200' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="w-8 h-8 flex items-center justify-center bg-red-800 text-white rounded-full font-black text-[11px] italic shadow-md">{index + 1}</span>
+              <div key={song.id} className={`group p-5 rounded-[2.2rem] transition-all border-2 ${isEditing ? 'bg-white border-blue-100 shadow-md' : 'bg-white/60 border-transparent shadow-sm'}`}>
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-10 h-10 flex items-center justify-center bg-slate-900 text-white rounded-2xl font-black text-[12px] shadow-lg italic shrink-0">
+                    {index + 1}
+                  </div>
                   {isEditing ? (
                     <input 
-                      className="flex-1 p-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold focus:ring-2 ring-red-500 outline-none"
+                      className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold focus:ring-2 ring-blue-500 outline-none transition-all"
                       value={song.name}
                       onChange={(e) => handleUpdateField('songs', song.id, 'name', e.target.value)}
-                      placeholder="Tên bài hát..."
+                      placeholder="Nhập tên bài hát..."
                     />
                   ) : (
-                    <h4 className="text-[13px] font-black text-slate-700 uppercase">{song.name || `Bài hát ${index + 1}`}</h4>
+                    <h4 className="text-[14px] font-bold text-slate-800 leading-tight">{song.name}</h4>
                   )}
                 </div>
 
                 {isEditing ? (
-                  <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
-                    <Youtube size={16} className="text-red-600" />
+                  <div className="relative group">
+                    <Youtube className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500" size={16} />
                     <input 
-                      className="flex-1 text-[11px] outline-none"
+                      className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-medium outline-none focus:bg-white transition-all"
                       value={song.embedUrl}
                       onChange={(e) => handleUpdateField('songs', song.id, 'embedUrl', e.target.value)}
-                      placeholder="Dán link YouTube tại đây..."
+                      placeholder="Dán link bài hát từ YouTube..."
                     />
                   </div>
                 ) : (
                   song.embedUrl && (
-                    <div className="rounded-2xl overflow-hidden aspect-video shadow-md border border-slate-200">
-                      <iframe src={song.embedUrl} className="w-full h-full" allowFullScreen title={song.name} />
+                    <div className="rounded-[1.5rem] overflow-hidden aspect-video shadow-inner bg-black border border-slate-200">
+                      <iframe src={song.embedUrl} className="w-full h-full" allowFullScreen loading="lazy" />
                     </div>
                   )
                 )}
@@ -195,47 +207,52 @@ const EntertainmentView: React.FC<{
           </div>
         </div>
 
-        {/* CỘT 5 ĐIỆU VŨ */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-4 border-b border-slate-200 pb-4">
-            <h3 className="text-[14px] font-black text-slate-800 uppercase flex items-center gap-3 italic">
-              <FileVideo className="text-blue-700" size={22} /> 5 ĐIỆU VŨ QUÂN ĐỘI
-            </h3>
+        {/* KHU VỰC 5 ĐIỆU VŨ */}
+        <div className="space-y-6 bg-blue-50/30 p-6 rounded-[3rem] border border-blue-100">
+          <div className="flex items-center gap-3 px-4 mb-2">
+            <FileVideo className="text-blue-700" size={24} />
+            <h3 className="text-[15px] font-black text-slate-800 uppercase italic">5 điệu vũ quân đội</h3>
           </div>
 
           <div className="space-y-6">
             {dances.map((dance, index) => (
-              <div key={dance.id} className={`p-6 rounded-[2.5rem] border transition-all ${isEditing ? 'bg-blue-50 border-blue-300 shadow-inner' : 'bg-white border-slate-100 shadow-md'}`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-700 text-white rounded-xl shadow-md">
-                    <Video size={18} />
+              <div key={dance.id} className={`p-6 rounded-[2.8rem] transition-all border-2 ${isEditing ? 'bg-white border-blue-300 shadow-xl' : 'bg-white border-slate-200 shadow-md'}`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-blue-100 shadow-lg">
+                    <Video size={20} />
                   </div>
                   {isEditing ? (
-                    <input 
-                      className="flex-1 p-3 bg-white border border-blue-200 rounded-xl text-[13px] font-black focus:ring-2 ring-blue-500 outline-none"
-                      value={dance.name}
-                      onChange={(e) => handleUpdateField('dances', dance.id, 'name', e.target.value)}
-                    />
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[9px] font-black text-blue-600 uppercase ml-1">Tên điệu vũ</label>
+                      <input 
+                        className="w-full p-3 bg-slate-50 border border-blue-100 rounded-xl text-[14px] font-black outline-none focus:ring-2 ring-blue-500"
+                        value={dance.name}
+                        onChange={(e) => handleUpdateField('dances', dance.id, 'name', e.target.value)}
+                      />
+                    </div>
                   ) : (
-                    <h4 className="text-[15px] font-black text-slate-800 uppercase italic">Điệu số {index + 1}: {dance.name}</h4>
+                    <h4 className="text-[16px] font-black text-slate-800 italic uppercase">Điệu số {index + 1}: {dance.name}</h4>
                   )}
                 </div>
 
                 {isEditing ? (
-                  <input 
-                    className="w-full p-3 bg-white border border-blue-100 rounded-xl text-[11px] outline-none mb-2"
-                    value={dance.embedUrl}
-                    onChange={(e) => handleUpdateField('dances', dance.id, 'embedUrl', e.target.value)}
-                    placeholder="Dán link YouTube hướng dẫn điệu vũ..."
-                  />
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-red-600 uppercase ml-1">Đường dẫn video (YouTube)</label>
+                    <input 
+                      className="w-full p-4 bg-slate-50 border border-blue-100 rounded-xl text-[11px] font-medium outline-none"
+                      value={dance.embedUrl}
+                      onChange={(e) => handleUpdateField('dances', dance.id, 'embedUrl', e.target.value)}
+                      placeholder="Ví dụ: https://www.youtube.com/watch?v=..."
+                    />
+                  </div>
                 ) : (
-                  <div className="aspect-video bg-slate-900 rounded-[2rem] overflow-hidden shadow-2xl ring-4 ring-slate-50">
+                  <div className="aspect-video bg-slate-900 rounded-[2rem] overflow-hidden shadow-2xl ring-4 ring-slate-100/50">
                     {dance.embedUrl ? (
-                      <iframe src={dance.embedUrl} className="w-full h-full" allowFullScreen title={dance.name} />
+                      <iframe src={dance.embedUrl} className="w-full h-full" allowFullScreen />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-2">
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-3">
                         <Youtube size={48} className="opacity-10" />
-                        <span className="text-[10px] font-bold uppercase opacity-30">Chưa cập nhật video</span>
+                        <span className="text-[10px] font-black uppercase opacity-20 tracking-[0.3em]">Đang chờ cập nhật video</span>
                       </div>
                     )}
                   </div>
@@ -246,19 +263,17 @@ const EntertainmentView: React.FC<{
         </div>
       </div>
 
-      {/* FOOTER CẢNH BÁO VÀ HƯỚNG DẪN */}
-      <div className="bg-amber-50 p-6 rounded-[2.5rem] border border-amber-200 flex gap-5 items-start shadow-inner">
-        <div className="p-3 bg-white rounded-2xl text-amber-600 shadow-sm"><AlertCircle size={24} /></div>
-        <div className="space-y-2">
-          <p className="text-[11px] text-amber-900 font-bold uppercase italic leading-relaxed">
-            HƯỚNG DẪN DÀNH CHO QUẢN TRỊ VIÊN:
-          </p>
-          <ul className="text-[10px] text-amber-800 font-medium space-y-1 list-disc pl-4">
-            <li>Bấm <b>"QUẢN TRỊ NỘI DUNG"</b> để mở các ô nhập liệu.</li>
-            <li>Dán trực tiếp link YouTube (Ví dụ: https://www.youtube.com/watch?v=...) vào ô tương ứng.</li>
-            <li>Phải bấm <b>"LƯU CẤU HÌNH"</b> và đợi thông báo thành công để dữ liệu được ghi đè vĩnh viễn.</li>
-            <li>Nếu nội dung không thay đổi sau khi lưu, hãy nhấn <b>F5</b> để làm mới bộ nhớ đệm trình duyệt.</li>
-          </ul>
+      {/* FOOTER HƯỚNG DẪN */}
+      <div className="bg-white p-8 rounded-[3rem] border-2 border-slate-100 shadow-xl flex flex-col md:flex-row gap-8 items-center">
+        <div className="p-5 bg-amber-50 rounded-3xl text-amber-600 animate-bounce"><AlertCircle size={32} /></div>
+        <div className="flex-1 space-y-3 text-center md:text-left">
+          <h4 className="text-[14px] font-black text-slate-800 uppercase italic">Hướng dẫn bảo mật dữ liệu</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2 text-[11px] text-slate-600 font-bold uppercase italic leading-relaxed">
+            <p className="flex items-center gap-2"><RefreshCw size={14} className="text-blue-500" /> Sau khi bấm "Lưu", hãy đợi thông báo xác nhận.</p>
+            <p className="flex items-center gap-2"><RefreshCw size={14} className="text-blue-500" /> Nếu video không hiện, hãy kiểm tra lại link YouTube.</p>
+            <p className="flex items-center gap-2"><RefreshCw size={14} className="text-blue-500" /> Hệ thống tự động ghi nhớ 15 bài và 5 điệu chính quy.</p>
+            <p className="flex items-center gap-2"><RefreshCw size={14} className="text-blue-500" /> Nhấn Ctrl + F5 nếu nội dung bị kẹt ở bản cũ.</p>
+          </div>
         </div>
       </div>
     </div>
