@@ -82,13 +82,27 @@ const App: React.FC = () => {
   };
 
   const updateTradition = (key: string, name: string, history: string, imageUrl?: string, avatarUrl?: string) => {
-    const newData = {
-      ...appData,
-      tradition: { ...appData.tradition, [key]: { name, history, imageUrl, avatarUrl } }
-    };
-    setAppData(newData);
-    saveToCloud(newData);
+  // Tạo bản sao dữ liệu mới nhất
+  const newData = {
+    ...appData,
+    tradition: {
+      ...appData.tradition,
+      [key]: { 
+        ...appData.tradition[key], // Giữ lại các trường cũ nếu có
+        name, 
+        history, 
+        imageUrl: imageUrl || appData.tradition[key]?.imageUrl || "", 
+        avatarUrl: avatarUrl || appData.tradition[key]?.avatarUrl || "" 
+      }
+    }
   };
+  
+  // Bước 1: Cập nhật ngay lập tức lên màn hình Admin
+  setAppData(newData);
+  
+  // Bước 2: Đẩy lên Firebase để máy chiến sĩ cũng thấy
+  saveToCloud(newData); 
+};
 
   if (!currentUser) return <AuthScreen data={appData} onLogin={setCurrentUser} />;
   const isAdmin = currentUser.role === 'admin';
