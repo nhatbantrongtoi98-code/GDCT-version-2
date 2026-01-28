@@ -82,20 +82,25 @@ const App: React.FC = () => {
   };
 
   const updateTradition = (key: string, name: string, history: string, imageUrl?: string, avatarUrl?: string) => {
-  // Tạo bản sao dữ liệu mới nhất
-  const newData = {
-    ...appData,
-    tradition: {
-      ...appData.tradition,
-      [key]: { 
-        ...appData.tradition[key], // Giữ lại các trường cũ nếu có
-        name, 
-        history, 
-        imageUrl: imageUrl || appData.tradition[key]?.imageUrl || "", 
-        avatarUrl: avatarUrl || appData.tradition[key]?.avatarUrl || "" 
+  setAppData(prevData => {
+    const newData = {
+      ...prevData,
+      tradition: {
+        ...prevData.tradition,
+        [key]: { 
+          ...prevData.tradition[key], // Giữ lại các thuộc tính cũ
+          name, 
+          history, 
+          imageUrl: imageUrl || prevData.tradition[key]?.imageUrl || "", 
+          avatarUrl: avatarUrl || prevData.tradition[key]?.avatarUrl || "" 
+        }
       }
-    }
-  };
+    };
+    // Đẩy lên Cloud ngay khi cập nhật state
+    saveToCloud(newData);
+    return newData;
+  });
+};
   
   // Bước 1: Cập nhật ngay lập tức lên màn hình Admin
   setAppData(newData);
