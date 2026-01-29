@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Home, History, BookOpen, Gamepad2, 
-  Settings, LogOut, ShieldCheck, Trophy 
-} from 'lucide-react';
+import { Home, History, BookOpen, Gamepad2, Settings, LogOut, ShieldCheck, Trophy } from 'lucide-react';
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const Sidebar: React.FC = () => {
-  const [name, setName] = useState("ĐANG TẢI...");
-  const [role, setRole] = useState("CHIẾN SĨ");
+  const [displayName, setDisplayName] = useState("CHIẾN SĨ");
+  const [role, setRole] = useState("Đang tải...");
   const auth = getAuth();
   const db = getDatabase();
 
   useEffect(() => {
-    // LẮNG NGHE TRẠNG THÁI ĐĂNG NHẬP
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
+        // LẮNG NGHE REALTIME TỪ DATABASE
         const userRef = ref(db, `users/${user.uid}`);
-        // TRẠM THU SÓNG: Nghe dữ liệu từ Firebase
-        const unsubscribeDb = onValue(userRef, (snapshot) => {
+        onValue(userRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
-            setName(data.fullName || user.displayName || "CHIẾN SĨ");
+            setDisplayName(data.fullName || user.displayName || "CHIẾN SĨ");
             setRole(data.role || "Chiến sĩ");
           }
         });
-        return () => unsubscribeDb();
       }
     });
     return () => unsubscribeAuth();
@@ -51,32 +46,22 @@ const Sidebar: React.FC = () => {
 
       <nav className="flex-1 space-y-2">
         {menuItems.map((item, index) => (
-          <div 
-            key={index}
-            className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${
-              item.active ? 'bg-red-700 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'
-            }`}
-          >
+          <div key={index} className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${item.active ? 'bg-red-700 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}>
             {item.icon}
             <span className="text-[13px] font-bold uppercase tracking-tighter">{item.label}</span>
           </div>
         ))}
       </nav>
 
-      {/* HIỂN THỊ USER - ĐỒNG BỘ REALTIME TỪ SETTINGS */}
       <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-3 px-2">
         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-red-50 shadow-sm bg-slate-100">
-          <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`} 
-            alt="Avatar" 
-            className="w-full h-full object-cover"
-          />
+          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`} alt="Avatar" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col overflow-hidden">
           <span className="text-[13px] font-black text-slate-800 truncate uppercase italic tracking-tighter">
-            {name}
+            {displayName}
           </span>
-          <span className={`text-[9px] font-bold uppercase italic ${role.includes('QUẢN LÝ') || role.includes('Quản trị viên') ? 'text-red-600' : 'text-orange-500'}`}>
+          <span className={`text-[9px] font-bold uppercase italic ${role.includes('QUẢN LÝ') ? 'text-red-600' : 'text-orange-500'}`}>
             {role}
           </span>
         </div>
