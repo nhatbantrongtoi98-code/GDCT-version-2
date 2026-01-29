@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Lock, Camera, Save, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { User, Lock, Camera, Save, Loader2, Eye, EyeOff, ShieldCheck, X } from 'lucide-react';
 import { getDatabase, ref, onValue, update } from "firebase/database";
-import { getAuth, onAuthStateChanged, updatePassword } from "firebase/auth";
+import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 
 const SettingsView: React.FC = () => {
   const auth = getAuth();
   const db = getDatabase();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // State dữ liệu
   const [userData, setUserData] = useState({ fullName: "", role: "", uid: "", avatarUrl: "" });
   const [newName, setNewName] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // State đổi mật khẩu
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwords, setPasswords] = useState({ old: "", new: "", confirm: "" });
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -22,22 +26,22 @@ const SettingsView: React.FC = () => {
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
           const isAdmin = user.email?.includes('admin');
-          const defaultName = isAdmin ? "NGUYỄN ĐẮC THANH" : (user.email?.split('@')[0].toUpperCase() || "CHIẾN SĨ");
+          // Ưu tiên tên trong DB -> Admin mặc định -> Tên email
+          const currentName = data?.fullName || (isAdmin ? "NGUYỄN ĐẮC THANH" : user.email?.split('@')[0].toUpperCase());
           
           setUserData({
-            fullName: data?.fullName || defaultName,
+            fullName: currentName,
             role: data?.role || (isAdmin ? "SĨ QUAN QUẢN LÝ" : "CHIẾN SĨ"),
             uid: user.uid,
             avatarUrl: data?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
           });
-          setNewName(data?.fullName || defaultName);
+          setNewName(currentName);
         });
       }
     });
     return () => unsubscribe();
   }, [auth, db]);
 
-  // Xử lý chọn ảnh từ máy tính
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -47,95 +51,103 @@ const SettingsView: React.FC = () => {
     }
   };
 
-  const handleSaveAll = async () => {
+  const handleSaveInfo = async () => {
     if (!userData.uid) return;
     setIsUpdating(true);
     try {
       const updates: any = { fullName: newName.trim().toUpperCase() };
       if (previewImage) updates.avatarUrl = previewImage;
 
-      // 1. Lưu thông tin tên và ảnh vào Database
       await update(ref(db, `users/${userData.uid}`), updates);
-
-      // 2. Cập nhật mật khẩu nếu có nhập
-      if (newPassword.trim().length >= 6) {
-        if (auth.currentUser) await updatePassword(auth.currentUser, newPassword);
-        setNewPassword("");
-      }
-
-      alert("✅ CẬP NHẬT HỆ THỐNG THÀNH CÔNG!");
+      alert("✅ CẬP NHẬT THÔNG TIN THÀNH CÔNG!");
     } catch (error) {
-      alert("❌ THẤT BẠI: Vui lòng đăng nhập lại để xác thực thay đổi mật khẩu.");
+      alert("❌ LỖI CẬP NHẬT!");
+    } finally { setIsUpdating(false); }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwords.new !== passwords.confirm) return alert("Mật khẩu xác nhận không khớp!");
+    if (passwords.new.length < 6) return alert("Mật khẩu mới phải từ 6 ký tự!");
+
+    setIsUpdating(true);
+    try {
+      const user = auth.currentUser;
+      if (user && user.email) {
+        const credential = EmailAuthProvider.credential(user.email, passwords.old);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, passwords.new);
+        alert("✅ ĐỔI MẬT KHẨU THÀNH CÔNG!");
+        setIsPasswordModalOpen(false);
+        setPasswords({ old: "", new: "", confirm: "" });
+      }
+    } catch (error) {
+      alert("❌ MẬT KHẨU CŨ KHÔNG CHÍNH XÁC!");
     } finally { setIsUpdating(false); }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-10 animate-in fade-in duration-500">
-      {/* HEADER: AVATAR & INFO (3.5rem) */}
+    <div className="max-w-4xl mx-auto space-y-8 pb-10">
+      {/* KHỐI 1: AVATAR & TÊN (Bo góc 3.5rem) */}
       <div className="bg-white p-12 rounded-[3.5rem] shadow-xl border border-slate-50 flex flex-col items-center text-center">
-        <div className="relative mb-8 group">
-          <div className="w-40 h-40 bg-slate-100 rounded-full overflow-hidden border-4 border-white shadow-2xl transition-transform group-hover:scale-105">
-            <img src={previewImage || userData.avatarUrl} className="w-full h-full object-cover" alt="Avatar" />
+        <div className="relative mb-6">
+          <div className="w-40 h-40 bg-slate-100 rounded-full overflow-hidden border-4 border-white shadow-2xl">
+            <img src={previewImage || userData.avatarUrl} className="w-full h-full object-cover" />
           </div>
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-2 right-2 p-3 bg-red-600 text-white rounded-full border-2 border-white shadow-lg hover:bg-slate-900 transition-colors"
-          >
-            <Camera size={20} />
-          </button>
+          <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 p-3 bg-red-600 text-white rounded-full border-2 border-white"><Camera size={20} /></button>
           <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
         </div>
-        <h2 className="text-4xl font-black text-slate-800 uppercase italic mb-3 tracking-tighter">{userData.fullName}</h2>
-        <div className="px-10 py-2 bg-orange-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest">{userData.role}</div>
+        <h2 className="text-4xl font-black text-slate-800 uppercase italic tracking-tighter mb-2">{userData.fullName}</h2>
+        <div className="px-8 py-2 bg-orange-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest">{userData.role}</div>
       </div>
 
-      {/* FORM: THÔNG TIN BẢO MẬT (3rem) */}
-      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-50 space-y-8">
+      {/* KHỐI 2: FORM CHỈNH SỬA (Bo góc 3rem) */}
+      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-50 space-y-6">
         <div className="flex items-center gap-3 border-b pb-4 border-slate-50">
           <ShieldCheck className="text-red-600" size={24} />
           <h3 className="font-black text-slate-800 uppercase italic tracking-tighter text-xl">Thông tin bảo mật</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Tên hiển thị mới</label>
-            <div className="relative">
-              <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input 
-                type="text" 
-                value={newName} 
-                onChange={(e) => setNewName(e.target.value.toUpperCase())} 
-                className="w-full pl-14 p-5 bg-slate-50 border-2 border-slate-50 rounded-[2rem] font-bold uppercase outline-none focus:border-red-600 transition-all text-slate-700" 
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Họ tên hiển thị</label>
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value.toUpperCase())} className="w-full p-5 bg-slate-50 border-2 border-slate-50 rounded-[2rem] font-bold uppercase outline-none focus:border-red-600" />
           </div>
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Mật khẩu mới</label>
-            <div className="relative">
-              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input 
-                type={showPassword ? "text" : "password"} 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)} 
-                className="w-full pl-14 p-5 bg-slate-50 border-2 border-slate-50 rounded-[2rem] font-bold outline-none focus:border-red-600 transition-all" 
-                placeholder="••••••••" 
-              />
-              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400">
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Mật khẩu</label>
+            <button onClick={() => setIsPasswordModalOpen(true)} className="w-full p-5 bg-slate-50 border-2 border-slate-50 rounded-[2rem] font-bold text-slate-500 flex justify-between items-center hover:border-red-600 transition-all">
+              <span>••••••••••••</span>
+              <span className="text-red-600 text-[10px] font-black">THAY ĐỔI</span>
+            </button>
+          </div>
+        </div>
+
+        <button onClick={handleSaveInfo} disabled={isUpdating} className="w-full bg-slate-900 text-white p-6 rounded-[2.5rem] font-black uppercase tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-4">
+          {isUpdating ? <Loader2 className="animate-spin" /> : <Save />} LƯU TẤT CẢ THAY ĐỔI
+        </button>
+      </div>
+
+      {/* MODAL ĐỔI MẬT KHẨU */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-black text-slate-800 uppercase italic">Đổi mật khẩu</h3>
+              <button onClick={() => setIsPasswordModalOpen(false)}><X className="text-slate-400" /></button>
+            </div>
+            
+            <div className="space-y-4">
+              <input type="password" placeholder="MẬT KHẨU CŨ" value={passwords.old} onChange={(e) => setPasswords({...passwords, old: e.target.value})} className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-red-600" />
+              <input type="password" placeholder="MẬT KHẨU MỚI" value={passwords.new} onChange={(e) => setPasswords({...passwords, new: e.target.value})} className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-red-600" />
+              <input type="password" placeholder="XÁC NHẬN MẬT KHẨU MỚI" value={passwords.confirm} onChange={(e) => setPasswords({...passwords, confirm: e.target.value})} className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-red-600" />
+              
+              <button onClick={handleChangePassword} disabled={isUpdating} className="w-full bg-red-700 text-white p-5 rounded-2xl font-black uppercase tracking-widest mt-4">
+                {isUpdating ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐỔI"}
               </button>
             </div>
           </div>
         </div>
-
-        <button 
-          onClick={handleSaveAll} 
-          disabled={isUpdating} 
-          className="w-full bg-slate-900 text-white p-6 rounded-[2.5rem] font-black uppercase tracking-widest hover:bg-red-700 transition-all flex items-center justify-center gap-4 shadow-xl active:scale-95"
-        >
-          {isUpdating ? <Loader2 className="animate-spin" /> : <Save />} 
-          LƯU TẤT CẢ THAY ĐỔI
-        </button>
-      </div>
+      )}
     </div>
   );
 };
