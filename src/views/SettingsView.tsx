@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Lock, Camera, Save, Loader2, Mail, Fingerprint, ShieldCheck, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Camera, Save, Loader2, Image as ImageIcon, ShieldCheck, Mail, Fingerprint } from 'lucide-react';
 import { getDatabase, ref, update, onValue } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
@@ -9,14 +9,14 @@ const SettingsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
+  // State quản lý dữ liệu gốc từ hệ thống
   const [userData, setUserData] = useState({ fullName: "", role: "", uid: "", avatarUrl: "", email: "", wallpaperUrl: "" });
   const [newName, setNewName] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewWallpaper, setPreviewWallpaper] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success'>('idle');
 
-  // 1. ĐỒNG BỘ DỮ LIỆU REALTIME VĨNH VIỄN
+  // 1. CƠ CHẾ ĐỒNG BỘ VĨNH VIỄN: Lắng nghe mọi thay đổi từ Database
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -28,10 +28,11 @@ const SettingsView: React.FC = () => {
               fullName: data.fullName || "",
               role: data.role || "CHIẾN SĨ",
               uid: user.uid,
-              avatarUrl: data.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${data.fullName}`,
+              avatarUrl: data.avatarUrl || "",
               email: user.email || "",
               wallpaperUrl: data.wallpaperUrl || ""
             });
+            // Đồng bộ ô nhập liệu với Database khi không gõ
             if (!isUpdating) setNewName(data.fullName || "");
           }
         });
@@ -40,8 +41,8 @@ const SettingsView: React.FC = () => {
     return () => unsubscribe();
   }, [auth, db, isUpdating]);
 
-  // 2. XỬ LÝ FILE ẢNH (AVATAR & WALLPAPER)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'wallpaper') => {
+  // 2. XỬ LÝ CHỌN FILE (AVATAR & WALLPAPER)
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'wallpaper') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -53,118 +54,128 @@ const SettingsView: React.FC = () => {
     }
   };
 
-  // 3. HÀM LƯU TỔNG THỂ (AVATAR + TÊN + HÌNH NỀN)
-  const handleSaveAll = async () => {
+  // 3. CHIẾN THUẬT LƯU VĨNH VIỄN (COMMIT TO DATABASE)
+  const handleSaveVinhVien = async () => {
     if (!auth.currentUser || !newName.trim()) return;
+    
     setIsUpdating(true);
     try {
       const userRef = ref(db, `users/${auth.currentUser.uid}`);
+      
+      // Tất cả nội dung thay đổi sẽ được đóng gói và gửi lên Database cùng lúc
       const updates: any = {
         fullName: newName.trim().toUpperCase(),
-        updatedAt: new Date().toISOString()
+        lastSync: new Date().toISOString()
       };
 
       if (previewImage) updates.avatarUrl = previewImage;
       if (previewWallpaper) updates.wallpaperUrl = previewWallpaper;
 
+      // Ghi đè vĩnh viễn lên Firebase
       await update(userRef, updates);
-      
+
+      // Xóa trạng thái tạm thời sau khi lưu thành công
       setPreviewImage(null);
       setPreviewWallpaper(null);
-      setStatus('success');
-      setTimeout(() => setStatus('idle'), 3000);
+      alert("✅ HỆ THỐNG: TẤT CẢ THAY ĐỔI ĐÃ ĐƯỢC LƯU VĨNH VIỄN!");
     } catch (error) {
-      alert("❌ LỖI LƯU DỮ LIỆU!");
-    } finally { setIsUpdating(false); }
+      alert("❌ LỖI: Không thể lưu. Vui lòng kiểm tra kết nối!");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 animate-in fade-in duration-500">
       
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* CỘT TRÁI: ĐỊNH DANH & HÌNH NỀN */}
-        <div className="lg:w-2/5 space-y-8">
-          {/* Card Profile */}
-          <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-50 relative group">
-            <div className="h-32 bg-slate-100 relative overflow-hidden">
-              {/* Hiển thị Wallpaper hiện tại hoặc Preview */}
-              {(previewWallpaper || userData.wallpaperUrl) && (
-                <img src={previewWallpaper || userData.wallpaperUrl} className="w-full h-full object-cover opacity-80" />
-              )}
-              <button 
-                onClick={() => wallpaperInputRef.current?.click()}
-                className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md text-white rounded-xl hover:bg-white/40 transition-all"
-                title="Đổi hình nền"
-              >
-                <ImageIcon size={18} />
-              </button>
-              <input type="file" ref={wallpaperInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'wallpaper')} />
-            </div>
+      {/* CỘT 1: THẺ NHẬN DIỆN (THEO MẪU ẢNH 442c33) */}
+      <div className="md:w-[35%] bg-white rounded-[3.5rem] shadow-2xl border border-slate-50 flex flex-col overflow-hidden">
+        {/* Khu vực Wallpaper thu nhỏ */}
+        <div className="h-32 bg-slate-100 relative group">
+          <img src={previewWallpaper || userData.wallpaperUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"} 
+               className="w-full h-full object-cover opacity-60 transition-opacity group-hover:opacity-80" alt="Wallpaper" />
+          <button onClick={() => wallpaperInputRef.current?.click()} className="absolute top-4 right-4 p-2 bg-white/30 backdrop-blur-md rounded-xl text-white hover:bg-white/50">
+            <ImageIcon size={18} />
+          </button>
+          <input type="file" ref={wallpaperInputRef} className="hidden" accept="image/*" onChange={(e) => handleFile(e, 'wallpaper')} />
+        </div>
 
-            <div className="px-8 pb-10 flex flex-col items-center -mt-16">
-              <div className="relative">
-                <div className="w-40 h-40 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white">
-                  <img src={previewImage || userData.avatarUrl} className="w-full h-full object-cover" />
-                </div>
-                <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 p-3 bg-red-600 text-white rounded-full border-4 border-white shadow-lg active:scale-90 transition-transform">
-                  <Camera size={18} />
-                </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
-              </div>
-              <h2 className="mt-6 text-2xl font-black text-slate-800 tracking-tighter uppercase">{userData.fullName}</h2>
-              <p className="text-red-600 font-bold text-xs tracking-widest mt-1 italic">{userData.role}</p>
+        <div className="px-10 pb-12 flex flex-col items-center -mt-16">
+          <div className="relative">
+            <div className="w-40 h-40 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white">
+              <img src={previewImage || userData.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.uid}`} className="w-full h-full object-cover" alt="Avatar" />
+            </div>
+            <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 p-3 bg-red-600 text-white rounded-full border-4 border-white shadow-lg active:scale-90">
+              <Camera size={18} />
+            </button>
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFile(e, 'avatar')} />
+          </div>
+
+          <div className="mt-10 w-full space-y-5">
+            <div className="flex items-center gap-4 text-slate-400">
+              <div className="p-2 bg-slate-50 rounded-lg"><Mail size={16} /></div>
+              <span className="text-sm font-medium italic">{userData.email || "chưa xác định"}</span>
+            </div>
+            <div className="flex items-center gap-4 text-slate-400">
+              <div className="p-2 bg-slate-50 rounded-lg"><Fingerprint size={16} /></div>
+              <span className="text-sm font-medium italic truncate">ID: {userData.uid}</span>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* CỘT PHẢI: FORM CHỈNH SỬA */}
-        <div className="lg:w-3/5 bg-white rounded-[3rem] p-10 shadow-2xl border border-slate-50">
-          <header className="mb-10 flex justify-between items-start">
-            <div>
-              <h2 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter">Cài đặt vĩnh viễn</h2>
-              <p className="text-slate-400">Quản lý hồ sơ và cấu hình hệ thống</p>
-            </div>
-            <ShieldCheck className="text-red-600/10" size={60} />
+      {/* CỘT 2: KHỐI NỘI DUNG CÀI ĐẶT (THEO MẪU ẢNH 43d27c) */}
+      <div className="md:w-[65%] bg-white rounded-[3.5rem] p-12 shadow-2xl border border-slate-50 flex flex-col justify-between">
+        <div>
+          <header className="mb-12 relative">
+            <h1 className="text-4xl font-black text-[#0f172a] uppercase italic tracking-tighter">Cài đặt vĩnh viễn</h1>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Quản lý hồ sơ và cấu hình hệ thống</p>
+            <ShieldCheck className="absolute top-0 right-0 text-red-500/10" size={80} />
           </header>
 
-          <div className="space-y-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-4">Họ và tên hiển thị</label>
+          <div className="space-y-10">
+            {/* Field: Họ tên */}
+            <div className="space-y-4 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-4">Họ và tên hiển thị</label>
               <div className="relative">
-                <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-red-600 transition-colors" size={22} />
                 <input 
                   type="text" 
-                  value={newName}
+                  value={newName} 
                   onChange={(e) => setNewName(e.target.value.toUpperCase())}
-                  className="w-full pl-16 p-6 bg-slate-50 border-none rounded-[2rem] font-bold text-slate-800 focus:ring-2 ring-red-500/20 outline-none transition-all"
+                  className="w-full pl-16 p-6 bg-slate-50 border-2 border-transparent rounded-[2rem] font-black text-slate-800 focus:bg-white focus:border-red-600 outline-none transition-all shadow-sm"
+                  placeholder="NHẬP TÊN CỦA ĐỒNG CHÍ..."
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-4">Bảo mật tài khoản</label>
+            {/* Field: Bảo mật */}
+            <div className="space-y-4">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-4">Bảo mật tài khoản</label>
               <div className="flex gap-4">
                 <div className="relative flex-1">
-                  <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                  <input type="password" value="********" disabled className="w-full pl-16 p-6 bg-slate-50 border-none rounded-[2rem] font-bold text-slate-200" />
+                  <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={22} />
+                  <input type="password" value="********" disabled className="w-full pl-16 p-6 bg-slate-100 rounded-[2rem] font-bold text-slate-300" />
                 </div>
-                <button className="px-8 bg-slate-100 text-slate-600 rounded-[2rem] font-black text-[10px] uppercase hover:bg-red-600 hover:text-white transition-all">Thay đổi</button>
+                <button className="px-10 bg-slate-50 text-slate-500 rounded-[2rem] font-black text-[11px] uppercase border-2 border-slate-100 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all">
+                  Thay đổi
+                </button>
               </div>
             </div>
           </div>
-
-          <button 
-            onClick={handleSaveAll}
-            disabled={isUpdating}
-            className={`w-full mt-12 p-7 rounded-[2.5rem] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 shadow-2xl transition-all active:scale-95 ${
-              status === 'success' ? 'bg-green-600' : 'bg-[#0f172a] hover:bg-red-700'
-            } text-white`}
-          >
-            {isUpdating ? <Loader2 className="animate-spin" /> : status === 'success' ? <CheckCircle2 /> : <Save />}
-            {status === 'success' ? 'ĐÃ LƯU VĨNH VIỄN' : 'XÁC NHẬN LƯU THAY ĐỔI'}
-          </button>
         </div>
+
+        {/* Nút lưu cuối cùng */}
+        <button 
+          onClick={handleSaveVinhVien}
+          disabled={isUpdating}
+          className="w-full mt-12 bg-[#0f172a] text-white p-7 rounded-[2.5rem] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-5 hover:bg-red-700 shadow-[0_20px_50px_rgba(15,23,42,0.3)] transition-all active:scale-95 disabled:opacity-50"
+        >
+          {isUpdating ? <Loader2 className="animate-spin" /> : <Save />}
+          Xác nhận lưu thay đổi
+        </button>
       </div>
+
     </div>
   );
 };
