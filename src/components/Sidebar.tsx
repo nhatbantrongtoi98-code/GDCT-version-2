@@ -4,22 +4,24 @@ import { getDatabase, ref, onValue } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const Sidebar: React.FC = () => {
-  const [displayName, setDisplayName] = useState("CHIẾN SĨ");
-  const [role, setRole] = useState("Đang tải...");
+  const [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState("");
   const auth = getAuth();
   const db = getDatabase();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // LẮNG NGHE REALTIME TỪ DATABASE
         const userRef = ref(db, `users/${user.uid}`);
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
-          if (data) {
-            setDisplayName(data.fullName || user.displayName || "CHIẾN SĨ");
-            setRole(data.role || "Chiến sĩ");
-          }
+          
+          // PHÂN QUYỀN CHUẨN: Admin mặc định tên riêng, Chiến sĩ lấy tên đăng nhập
+          const isAdmin = data?.role === 'Quản trị viên' || user.email?.includes('admin') || user.displayName?.includes('admin');
+          const defaultName = isAdmin ? "NGUYỄN ĐẮC THANH" : (user.displayName || "CHIẾN SĨ");
+
+          setDisplayName(data?.fullName || defaultName);
+          setRole(data?.role || (isAdmin ? "SĨ QUAN QUẢN LÝ" : "CHIẾN SĨ"));
         });
       }
     });
@@ -27,26 +29,24 @@ const Sidebar: React.FC = () => {
   }, [auth, db]);
 
   const menuItems = [
-    { icon: <Trophy size={20} />, label: 'Hệ thống giáo dục chính trị', active: false },
-    { icon: <Home size={20} />, label: 'Trang chủ', active: false },
-    { icon: <History size={20} />, label: 'Lịch sử Dân tộc Việt Nam', active: false },
-    { icon: <ShieldCheck size={20} />, label: 'Lịch sử, truyền thống đơn vị', active: false },
-    { icon: <BookOpen size={20} />, label: 'Bài giảng chính trị', active: false },
-    { icon: <Gamepad2 size={20} />, label: 'Chiến sĩ thông thái', active: false },
+    { icon: <Trophy size={20} />, label: 'SỔ TAY GDCT' },
+    { icon: <Home size={20} />, label: 'Trang chủ' },
+    { icon: <History size={20} />, label: 'Lịch sử Dân tộc Việt Nam' },
+    { icon: <ShieldCheck size={20} />, label: 'Lịch sử, truyền thống đơn vị' },
+    { icon: <BookOpen size={20} />, label: 'Bài giảng chính trị' },
+    { icon: <Gamepad2 size={20} />, label: 'Chiến sĩ thông thái' },
     { icon: <Settings size={20} />, label: 'Cài đặt', active: true },
   ];
 
   return (
     <div className="w-72 h-screen bg-white border-r border-slate-100 flex flex-col p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-10 px-2">
-        <div className="text-red-700 font-black italic leading-tight text-lg uppercase">
-          Hệ thống <br/> Giáo dục chính trị
-        </div>
+        <div className="text-red-700 font-black italic leading-tight text-lg uppercase">SỔ TAY GDCT</div>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-2 font-medium">
         {menuItems.map((item, index) => (
-          <div key={index} className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${item.active ? 'bg-red-700 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <div key={index} className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${item.active ? 'bg-red-700 text-white shadow-lg shadow-red-200' : 'text-slate-500 hover:bg-slate-50'}`}>
             {item.icon}
             <span className="text-[13px] font-bold uppercase tracking-tighter">{item.label}</span>
           </div>
@@ -58,15 +58,11 @@ const Sidebar: React.FC = () => {
           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`} alt="Avatar" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col overflow-hidden">
-          <span className="text-[13px] font-black text-slate-800 truncate uppercase italic tracking-tighter">
-            {displayName}
-          </span>
-          <span className={`text-[9px] font-bold uppercase italic ${role.includes('QUẢN LÝ') ? 'text-red-600' : 'text-orange-500'}`}>
-            {role}
-          </span>
+          <span className="text-[13px] font-black text-slate-800 truncate uppercase italic tracking-tighter">{displayName}</span>
+          <span className={`text-[9px] font-bold uppercase italic ${role.includes('QUẢN LÝ') ? 'text-red-600' : 'text-orange-500'}`}>{role}</span>
         </div>
       </div>
-
+      
       <button className="flex items-center gap-3 px-4 py-4 mt-4 text-slate-400 hover:text-red-700 transition-colors group">
         <LogOut size={18} />
         <span className="text-[11px] font-bold uppercase italic">Đăng xuất</span>
