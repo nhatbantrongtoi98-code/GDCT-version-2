@@ -41,41 +41,35 @@ const SettingsView: React.FC = () => {
   }, [auth, db, isUpdating]);
 
   // 2. HÀM LƯU CHUẨN: Đã gộp và sửa lỗi khai báo hàm
-  const handleSaveVinhVien = async () => {
-    if (!auth.currentUser || !newName.trim()) {
-      alert("Vui lòng nhập họ tên!");
-      return;
-    }
+  // Thay thế toàn bộ hàm handleSaveVinhVien cũ bằng đoạn này
+const handleSaveVinhVien = async () => {
+  if (!auth.currentUser || !newName.trim()) return;
+  setIsUpdating(true);
+
+  try {
+    const userRef = ref(db, `users/${auth.currentUser.uid}`);
     
-    setIsUpdating(true);
+    const updates = {
+      fullName: newName.trim().toUpperCase(),
+      avatarUrl: previewImage || userData.avatarUrl || "",
+      wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
+      lastModified: Date.now() 
+    };
 
-    try {
-      const userRef = ref(db, `users/${auth.currentUser.uid}`);
-      
-      // Chuẩn bị dữ liệu cập nhật
-      const updates = {
-        fullName: newName.trim().toUpperCase(),
-        avatarUrl: previewImage || userData.avatarUrl || "",
-        wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
-        lastModified: Date.now() 
-      };
-
-      // Ghi đè vào Database
-      await update(userRef, updates);
-      
-      alert("✅ ĐÃ KHÓA DỮ LIỆU VĨNH VIỄN VÀO HỆ THỐNG!");
-      
-      // Xóa bản xem trước sau khi lưu thành công
-      setPreviewImage(null);
-      setPreviewWallpaper(null);
-
-    } catch (error) {
-      console.error(error);
-      alert("❌ LỖI HỆ THỐNG: Không thể ghi dữ liệu. Kiểm tra Rules Firebase!");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    // Lệnh này phải thành công thì mới lưu vĩnh viễn được
+    await update(userRef, updates);
+    
+    alert("✅ ĐÃ LƯU VĨNH VIỄN THÀNH CÔNG!");
+    setPreviewImage(null);
+    setPreviewWallpaper(null);
+  } catch (error) {
+    // Nếu nó nhảy vào đây, đồng chí sẽ biết ngay là do Rules bị khóa
+    console.error("Lỗi Firebase:", error);
+    alert("❌ CHƯA LƯU ĐƯỢC: Server từ chối lệnh ghi này!");
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 animate-in fade-in duration-500">
