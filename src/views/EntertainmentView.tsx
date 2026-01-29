@@ -1,82 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { Music, Video, Edit2, FileAudio, FileVideo, Save, Loader2, XCircle, Youtube } from 'lucide-react';
+import { Music, Video, Edit2, FileAudio, FileVideo, Save, Loader2, Youtube } from 'lucide-react';
+// IMPORT FIREBASE ĐỂ ĐỒNG BỘ TỨC THÌ
+import { ref, set, onValue } from "firebase/database";
+import { db } from "./firebase-config"; 
 
-const EntertainmentView: React.FC<{ 
-  isAdmin: boolean; 
-  data: any; 
-  onUpdateEntertainment: (updater: (prev: any) => any) => Promise<void> 
-}> = ({ isAdmin, data, onUpdateEntertainment }) => {
+const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Tên kho lưu trữ vĩnh viễn trong trình duyệt
-  const STORAGE_KEY = 'MILITARY_ENTERTAINMENT_STORAGE';
+  // Khởi tạo từ LocalStorage trước để load nhanh, sau đó Firebase sẽ đè lên sau
+  const [songs, setSongs] = useState<any[]>(() => {
+    const saved = localStorage.getItem('OFFLINE_SONGS');
+    return saved ? JSON.parse(saved) : Array.from({ length: 15 }, (_, i) => ({ id: `s-${i}`, name: `Bài hát ${i + 1}`, embedUrl: '' }));
+  });
 
-  const [songs, setSongs] = useState<any[]>([]);
-  const [dances, setDances] = useState<any[]>([]);
+  const [dances, setDances] = useState<any[]>(() => {
+    const saved = localStorage.getItem('OFFLINE_DANCES');
+    return saved ? JSON.parse(saved) : Array.from({ length: 5 }, (_, i) => ({ id: `d-${i}`, name: `Điệu vũ ${i + 1}`, embedUrl: '' }));
+  });
 
-  // 1. LẤY DỮ LIỆU TỪ KHO KHI MỞ TRANG
+  // 1. LẤY DỮ LIỆU TỪ FIREBASE (ĐỒNG BỘ THỜI GIAN THỰC)
   useEffect(() => {
-    // Ưu tiên 1: Dữ liệu đã lưu trong kho (LocalStorage)
-    // Ưu tiên 2: Dữ liệu từ Server truyền xuống
-    const savedData = localStorage.getItem(STORAGE_KEY);
+    const entertainmentRef = ref(db, 'military_entertainment');
     
-    let initialSongs = [];
-    let initialDances = [];
+    const unsubscribe = onValue(entertainmentRef, (snapshot) => {
+      const fbData = snapshot.val();
+      if (fbData) {
+        setSongs(fbData.songs || []);
+        setDances(fbData.dances || []);
+        // Sao lưu offline
+        localStorage.setItem('OFFLINE_SONGS', JSON.stringify(fbData.songs));
+        localStorage.setItem('OFFLINE_DANCES', JSON.stringify(fbData.dances));
+      }
+    });
 
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      initialSongs = parsed.songs || [];
-      initialDances = parsed.dances || [];
-    } else {
-      initialSongs = data?.entertainment?.songs || [];
-      initialDances = data?.entertainment?.dances || [];
-    }
-
-    // Nếu cả 2 đều trống, tạo sẵn khung 15 bài và 5 điệu
-    if (initialSongs.length === 0) {
-      initialSongs = Array.from({ length: 15 }, (_, i) => ({ id: `s-${i}`, name: `Bài hát ${i + 1}`, embedUrl: '' }));
-    }
-    if (initialDances.length === 0) {
-      initialDances = Array.from({ length: 5 }, (_, i) => ({ id: `d-${i}`, name: `Điệu vũ ${i + 1}`, embedUrl: '' }));
-    }
-
-    setSongs(initialSongs);
-    setDances(initialDances);
-  }, [data]);
+    return () => unsubscribe();
+  }, []);
 
   // Hàm chuẩn hóa link Youtube
   const formatUrl = (url: string) => {
-    if (!url) return '';
+    if (!url || url.includes('embed')) return url;
     const id = url.includes('v=') ? url.split('v=')[1]?.split('&')[0] : url.split('youtu.be/')[1]?.split('?')[0];
     return id ? `https://www.youtube.com/embed/${id}` : url;
   };
 
-  // 2. HÀM LƯU VĨNH VIỄN
+  // 2. HÀM LƯU LÊN FIREBASE (CHỈ ADMIN MỚI ĐƯỢC PHÉP)
   const handleSave = async () => {
+    if (!isAdmin) return;
     setIsSaving(true);
     
     const finalSongs = songs.map(s => ({ ...s, embedUrl: formatUrl(s.embedUrl) }));
     const finalDances = dances.map(d => ({ ...d, embedUrl: formatUrl(d.embedUrl) }));
 
     try {
-      // BƯỚC A: Cất vào kho của trình duyệt (Lưu vĩnh viễn tại máy này)
-      const dataToSave = { songs: finalSongs, dances: finalDances };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-
-      // BƯỚC B: Gửi lên Server (Nếu file cha có kết nối Database)
-      await onUpdateEntertainment((prev: any) => ({
-        ...prev,
-        entertainment: dataToSave
-      }));
-
+      await set(ref(db, 'military_entertainment'), { songs: finalSongs, dances: finalDances });
       setIsEditing(false);
-      alert("✅ ĐÃ LƯU VĨNH VIỄN: Dữ liệu sẽ không bị mất khi tải lại trang.");
+      alert("✅ ĐỒNG BỘ THÀNH CÔNG: Toàn bộ máy chiến sĩ đã nhận nội dung mới.");
     } catch (e) {
       console.error(e);
-      // Ngay cả khi Server lỗi, Bước A đã thành công nên dữ liệu vẫn còn ở máy này
-      setIsEditing(false);
-      alert("⚠️ LƯU TẠM THỜI: Đã lưu vào máy tính này, nhưng chưa đồng bộ được lên Server.");
+      alert("❌ LỖI: Không thể kết nối Firebase.");
     } finally {
       setIsSaving(false);
     }
@@ -84,13 +66,12 @@ const EntertainmentView: React.FC<{
 
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-6">
-      {/* Header chuẩn theo yêu cầu */}
       <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border flex justify-between items-center">
         <div className="flex items-center gap-4">
           <div className="p-4 bg-red-800 rounded-3xl text-white shadow-lg"><Music size={28} /></div>
           <div>
             <h2 className="text-2xl font-black text-slate-800 uppercase italic">GÓC GIẢI TRÍ</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Hệ thống lưu trữ vĩnh viễn 15 bài & 5 điệu</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Hệ thống đồng bộ trực tuyến 15 bài & 5 điệu</p>
           </div>
         </div>
         {isAdmin && (
@@ -99,16 +80,15 @@ const EntertainmentView: React.FC<{
             className={`px-8 py-4 rounded-2xl font-black text-[11px] text-white transition-all flex items-center gap-2 ${isEditing ? 'bg-green-600' : 'bg-slate-900 shadow-xl'}`}
           >
             {isSaving ? <Loader2 className="animate-spin" size={18} /> : (isEditing ? <Save size={18} /> : <Edit2 size={18} />)}
-            {isEditing ? "XÁC NHẬN LƯU VĨNH VIỄN" : "QUẢN TRỊ NỘI DUNG"}
+            {isEditing ? "XÁC NHẬN ĐỒNG BỘ TOÀN MÁY" : "QUẢN TRỊ NỘI DUNG"}
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* DANH SÁCH 15 BÀI HÁT */}
         <div className="bg-slate-50 p-6 rounded-[3rem] border">
           <h3 className="flex items-center gap-2 font-black text-slate-700 uppercase italic mb-6 ml-4"><FileAudio className="text-red-700" /> 15 BÀI HÁT QUY ĐỊNH</h3>
-          <div className="space-y-3 max-h-[1000px] overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-[1000px] overflow-y-auto pr-2 custom-scrollbar">
             {songs.map((song, i) => (
               <div key={song.id} className="bg-white p-4 rounded-3xl border shadow-sm">
                 <div className="flex items-center gap-3 mb-2">
@@ -129,7 +109,6 @@ const EntertainmentView: React.FC<{
           </div>
         </div>
 
-        {/* 5 ĐIỆU VŨ */}
         <div className="bg-blue-50/50 p-6 rounded-[3rem] border">
           <h3 className="flex items-center gap-2 font-black text-slate-700 uppercase italic mb-6 ml-4"><FileVideo className="text-blue-700" /> 5 ĐIỆU VŨ QUÂN ĐỘI</h3>
           <div className="space-y-6">
@@ -146,7 +125,7 @@ const EntertainmentView: React.FC<{
                 {isEditing ? (
                   <input className="w-full text-[11px] p-3 bg-slate-50 rounded-2xl border" placeholder="Link video điệu vũ..." value={dance.embedUrl} onChange={e => setDances(prev => prev.map(d => d.id === dance.id ? {...d, embedUrl: e.target.value} : d))} />
                 ) : (
-                  <div className="aspect-video bg-black rounded-[2rem] overflow-hidden shadow-2xl">
+                  <div className="aspect-video bg-black rounded-[2rem] overflow-hidden shadow-2xl relative">
                     {dance.embedUrl ? <iframe src={dance.embedUrl} className="w-full h-full" allowFullScreen /> : <div className="h-full flex items-center justify-center text-white/20 font-black italic">CHƯA CẬP NHẬT VIDEO</div>}
                   </div>
                 )}
