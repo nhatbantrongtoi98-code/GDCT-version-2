@@ -49,34 +49,34 @@ const SettingsView: React.FC = () => {
     if (!auth.currentUser || !newName.trim()) return;
     setIsUpdating(true);
 
-    try {
-      const userRef = ref(db, `users/${auth.currentUser.uid}`);
-      
-      // Tạo đối tượng cập nhật
-      const updates: any = {
-        fullName: newName.trim().toUpperCase(),
-        lastSync: Date.now() // Ép hệ thống ghi nhận bản ghi mới nhất
-      };
+    const handleSavePermanent = async () => {
+  if (!auth.currentUser || !newName.trim()) return;
+  setIsUpdating(true);
 
-      // Nếu có ảnh mới thì mới đẩy lên, không thì giữ ảnh cũ
-      if (previewImage) updates.avatarUrl = previewImage;
-      if (previewWallpaper) updates.wallpaperUrl = previewWallpaper;
+  try {
+    const userRef = ref(db, `users/${auth.currentUser.uid}`);
+    
+    // 1. Tạo gói dữ liệu chuẩn
+    const updates = {
+      fullName: newName.trim().toUpperCase(),
+      avatarUrl: previewImage || userData.avatarUrl || "",
+      wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
+      lastModified: new Date().getTime() // Dùng timestamp số để database ưu tiên bản mới nhất
+    };
 
-      // THỰC HIỆN GHI ĐÈ VĨNH VIỄN VÀO DATABASE
-      await update(userRef, updates);
-      
-      // Xóa các bản xem trước sau khi lưu thành công
-      setPreviewImage(null);
-      setPreviewWallpaper(null);
-      
-      alert("✅ HỆ THỐNG: ĐÃ KHÓA DỮ LIỆU VĨNH VIỄN!");
-    } catch (error) {
-      console.error(error);
-      alert("❌ LỖI: Không thể lưu vào Database!");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    // 2. Ghi đè vĩnh viễn
+    await update(userRef, updates);
+    
+    // 3. THAO TÁC QUAN TRỌNG: Ép trình duyệt nhận dữ liệu mới vĩnh viễn
+    alert("✅ ĐÃ KHÓA DỮ LIỆU VĨNH VIỄN VÀO HỆ THỐNG!");
+    window.location.reload(); // Reset để các trang khác (Sidebar) buộc phải load lại tên mới
+    
+  } catch (error) {
+    alert("❌ LỖI HỆ THỐNG: Có thể do quyền ghi Firebase (Rules) bị chặn!");
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 animate-in fade-in duration-500">
