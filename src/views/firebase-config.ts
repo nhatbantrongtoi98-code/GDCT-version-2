@@ -1,15 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-// Các thông số này đồng chí lấy trong Project Settings trên Firebase Console
 const firebaseConfig = {
-  apiKey: "AIzaSy...", 
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef..."
+  apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
+  authDomain: "gdct-9b57d.firebaseapp.com",
+  databaseURL: "https://gdct-9b57d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "gdct-9b57d",
+  storageBucket: "gdct-9b57d.firebasestorage.app",
+  messagingSenderId: "818099040678",
+  appId: "1:818099040678:web:dd8601e6250c96ec415f67",
+  measurementId: "G-9MSSR1LKNT"
 };
 
 const app = initializeApp(firebaseConfig);
