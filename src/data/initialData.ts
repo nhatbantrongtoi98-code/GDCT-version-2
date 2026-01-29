@@ -1,7 +1,7 @@
 import { AppData } from '../types';
 
 export const INITIAL_DATA: AppData = {
-  appName: "Hệ thống Giáo dục Chính trị",
+  appName: "Sổ tay GDCT điện tử",
   appLogo: "🎖️", // Để mặc định là emoji cho nhẹ
   globalBackground: "", // Để trống để Admin tự tải lên sau
   backgroundPlaylist: [],
