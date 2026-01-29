@@ -15,14 +15,11 @@ const SettingsView: React.FC = () => {
   const [previewWallpaper, setPreviewWallpaper] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 1. CƠ CHẾ QUAN TRỌNG: Luôn đọc từ Database làm gốc (Single Source of Truth)
+  // 1. CƠ CHẾ LẮNG NGHE REALTIME: Đảm bảo dữ liệu luôn đồng bộ
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Tham chiếu đến đúng node users/uid của đồng chí
         const userRef = ref(db, `users/${user.uid}`);
-        
-        // Dùng onValue để lắng nghe: Cứ Database có gì là giao diện hiện cái đó ngay
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
@@ -32,10 +29,9 @@ const SettingsView: React.FC = () => {
               avatarUrl: data.avatarUrl || "",
               wallpaperUrl: data.wallpaperUrl || ""
             });
-            // Chỉ cập nhật input khi không trong quá trình gõ để tránh bị giật
+            // Chỉ cập nhật input khi người dùng không đang gõ
             if (!isUpdating) setNewName(data.fullName || "");
           } else {
-            // Nếu chưa có data thì hiện mặc định
             setUserData(prev => ({ ...prev, fullName: "QUÂN NHÂN", uid: user.uid }));
           }
         });
@@ -44,48 +40,54 @@ const SettingsView: React.FC = () => {
     return () => unsubscribe();
   }, [auth, db, isUpdating]);
 
-  // 2. HÀM LƯU "KHÓA CHẾT" DỮ LIỆU
+  // 2. HÀM LƯU CHUẨN: Đã gộp và sửa lỗi khai báo hàm
   const handleSaveVinhVien = async () => {
-    if (!auth.currentUser || !newName.trim()) return;
+    if (!auth.currentUser || !newName.trim()) {
+      alert("Vui lòng nhập họ tên!");
+      return;
+    }
+    
     setIsUpdating(true);
 
-    const handleSavePermanent = async () => {
-  if (!auth.currentUser || !newName.trim()) return;
-  setIsUpdating(true);
+    try {
+      const userRef = ref(db, `users/${auth.currentUser.uid}`);
+      
+      // Chuẩn bị dữ liệu cập nhật
+      const updates = {
+        fullName: newName.trim().toUpperCase(),
+        avatarUrl: previewImage || userData.avatarUrl || "",
+        wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
+        lastModified: Date.now() 
+      };
 
-  try {
-    const userRef = ref(db, `users/${auth.currentUser.uid}`);
-    
-    // 1. Tạo gói dữ liệu chuẩn
-    const updates = {
-      fullName: newName.trim().toUpperCase(),
-      avatarUrl: previewImage || userData.avatarUrl || "",
-      wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
-      lastModified: new Date().getTime() // Dùng timestamp số để database ưu tiên bản mới nhất
-    };
+      // Ghi đè vào Database
+      await update(userRef, updates);
+      
+      alert("✅ ĐÃ KHÓA DỮ LIỆU VĨNH VIỄN VÀO HỆ THỐNG!");
+      
+      // Xóa bản xem trước sau khi lưu thành công
+      setPreviewImage(null);
+      setPreviewWallpaper(null);
 
-    // 2. Ghi đè vĩnh viễn
-    await update(userRef, updates);
-    
-    // 3. THAO TÁC QUAN TRỌNG: Ép trình duyệt nhận dữ liệu mới vĩnh viễn
-    alert("✅ ĐÃ KHÓA DỮ LIỆU VĨNH VIỄN VÀO HỆ THỐNG!");
-    window.location.reload(); // Reset để các trang khác (Sidebar) buộc phải load lại tên mới
-    
-  } catch (error) {
-    alert("❌ LỖI HỆ THỐNG: Có thể do quyền ghi Firebase (Rules) bị chặn!");
-  } finally {
-    setIsUpdating(false);
-  }
-};
+    } catch (error) {
+      console.error(error);
+      alert("❌ LỖI HỆ THỐNG: Không thể ghi dữ liệu. Kiểm tra Rules Firebase!");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 animate-in fade-in duration-500">
       
-      {/* CỘT 1: PROFILE CARD - HIỂN THỊ DỮ LIỆU TỪ DATABASE */}
+      {/* CỘT 1: PROFILE CARD */}
       <div className="md:w-[35%] bg-white rounded-[3.5rem] shadow-2xl border border-slate-50 overflow-hidden flex flex-col">
         <div className="h-32 bg-slate-100 relative">
-          <img src={previewWallpaper || userData.wallpaperUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800"} 
-               className="w-full h-full object-cover opacity-60" alt="Wallpaper" />
+          <img 
+            src={previewWallpaper || userData.wallpaperUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800"} 
+            className="w-full h-full object-cover opacity-60" 
+            alt="Wallpaper" 
+          />
           <button onClick={() => wallpaperInputRef.current?.click()} className="absolute top-4 right-4 p-2 bg-white/30 backdrop-blur-md rounded-xl text-white hover:bg-white/50 transition-all">
             <ImageIcon size={18} />
           </button>
@@ -102,7 +104,11 @@ const SettingsView: React.FC = () => {
         <div className="px-10 pb-12 flex flex-col items-center -mt-16">
           <div className="relative">
             <div className="w-40 h-40 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white">
-              <img src={previewImage || userData.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.uid}`} className="w-full h-full object-cover" alt="Avatar" />
+              <img 
+                src={previewImage || userData.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.uid}`} 
+                className="w-full h-full object-cover" 
+                alt="Avatar" 
+              />
             </div>
             <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-2 right-2 p-3 bg-red-600 text-white rounded-full border-4 border-white shadow-lg active:scale-90 transition-transform">
               <Camera size={18} />
@@ -117,7 +123,6 @@ const SettingsView: React.FC = () => {
             }} />
           </div>
           
-          {/* Sửa lỗi không hiện tên: Đọc trực tiếp từ userData.fullName */}
           <h2 className="mt-6 text-2xl font-black text-slate-800 uppercase italic text-center">
             {userData.fullName || "QUÂN NHÂN"}
           </h2>
@@ -127,7 +132,7 @@ const SettingsView: React.FC = () => {
         </div>
       </div>
 
-      {/* CỘT 2: FORM CÀI ĐẶT VĨNH VIỄN */}
+      {/* CỘT 2: FORM CÀI ĐẶT */}
       <div className="md:w-[65%] bg-white rounded-[3.5rem] p-12 shadow-2xl border border-slate-50 flex flex-col">
         <header className="mb-12 relative">
           <h1 className="text-3xl font-black text-[#0f172a] uppercase italic tracking-tighter">Cài đặt vĩnh viễn</h1>
@@ -160,7 +165,6 @@ const SettingsView: React.FC = () => {
           XÁC NHẬN LƯU VĨNH VIỄN
         </button>
       </div>
-
     </div>
   );
 };
