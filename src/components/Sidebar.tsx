@@ -13,12 +13,13 @@ const Sidebar: React.FC = () => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         const userRef = ref(db, `users/${user.uid}`);
+        // Lắng nghe Realtime: Settings đổi là Sidebar nhảy tên ngay
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
+          const isAdmin = user.email?.includes('admin') || data?.role?.includes('QUẢN LÝ');
           
-          // PHÂN QUYỀN CHUẨN: Admin mặc định tên riêng, Chiến sĩ lấy tên đăng nhập
-          const isAdmin = data?.role === 'Quản trị viên' || user.email?.includes('admin') || user.displayName?.includes('admin');
-          const defaultName = isAdmin ? "NGUYỄN ĐẮC THANH" : (user.displayName || "CHIẾN SĨ");
+          // Mặc định Admin là Nguyễn Đắc Thanh, Chiến sĩ lấy tên đăng nhập
+          const defaultName = isAdmin ? "NGUYỄN ĐẮC THANH" : (user.email?.split('@')[0].toUpperCase() || "CHIẾN SĨ");
 
           setDisplayName(data?.fullName || defaultName);
           setRole(data?.role || (isAdmin ? "SĨ QUAN QUẢN LÝ" : "CHIẾN SĨ"));
@@ -29,7 +30,7 @@ const Sidebar: React.FC = () => {
   }, [auth, db]);
 
   const menuItems = [
-    { icon: <Trophy size={20} />, label: 'SỔ TAY GDCT' },
+    { icon: <Trophy size={20} />, label: 'Hệ thống giáo dục chính trị' },
     { icon: <Home size={20} />, label: 'Trang chủ' },
     { icon: <History size={20} />, label: 'Lịch sử Dân tộc Việt Nam' },
     { icon: <ShieldCheck size={20} />, label: 'Lịch sử, truyền thống đơn vị' },
@@ -44,7 +45,7 @@ const Sidebar: React.FC = () => {
         <div className="text-red-700 font-black italic leading-tight text-lg uppercase">SỔ TAY GDCT</div>
       </div>
 
-      <nav className="flex-1 space-y-2 font-medium">
+      <nav className="flex-1 space-y-2">
         {menuItems.map((item, index) => (
           <div key={index} className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${item.active ? 'bg-red-700 text-white shadow-lg shadow-red-200' : 'text-slate-500 hover:bg-slate-50'}`}>
             {item.icon}
@@ -53,20 +54,16 @@ const Sidebar: React.FC = () => {
         ))}
       </nav>
 
+      {/* Hiển thị thông tin đồng bộ */}
       <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-3 px-2">
         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-red-50 shadow-sm bg-slate-100">
-          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`} alt="Avatar" className="w-full h-full object-cover" />
+          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`} className="w-full h-full object-cover" />
         </div>
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex flex-col overflow-hidden text-left">
           <span className="text-[13px] font-black text-slate-800 truncate uppercase italic tracking-tighter">{displayName}</span>
-          <span className={`text-[9px] font-bold uppercase italic ${role.includes('QUẢN LÝ') ? 'text-red-600' : 'text-orange-500'}`}>{role}</span>
+          <span className="text-[9px] font-bold text-red-600 uppercase italic">{role}</span>
         </div>
       </div>
-      
-      <button className="flex items-center gap-3 px-4 py-4 mt-4 text-slate-400 hover:text-red-700 transition-colors group">
-        <LogOut size={18} />
-        <span className="text-[11px] font-bold uppercase italic">Đăng xuất</span>
-      </button>
     </div>
   );
 };
