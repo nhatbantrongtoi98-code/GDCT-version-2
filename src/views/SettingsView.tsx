@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Lock, Camera, Save, Loader2, Image as ImageIcon, ShieldCheck } from 'lucide-react';
-import { getDatabase, ref, update, onValue, get } from "firebase/database";
+import { User, Lock, Camera, Save, Loader2, Image as ImageIcon, ShieldCheck, Mail, Fingerprint } from 'lucide-react';
+import { getDatabase, ref, update, onValue } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const SettingsView: React.FC = () => {
@@ -9,34 +9,30 @@ const SettingsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
-  // State quản lý dữ liệu hiển thị
-  const [userData, setUserData] = useState({ fullName: "", role: "", uid: "", avatarUrl: "", wallpaperUrl: "" });
+  const [userData, setUserData] = useState({ fullName: "", role: "", uid: "", avatarUrl: "", email: "", wallpaperUrl: "" });
   const [newName, setNewName] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewWallpaper, setPreviewWallpaper] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 1. CƠ CHẾ QUAN TRỌNG NHẤT: Lắng nghe Realtime
-  // Khi đồng chí nhấn lưu ở trang này, Database thay đổi, onValue sẽ ép tất cả các trang khác phải nhận tên mới
+  // 1. CƠ CHẾ KHÓA DỮ LIỆU: Luôn lấy từ Database làm gốc
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const userRef = ref(db, `users/${user.uid}`);
-        
-        // Dùng onValue thay vì get() để dữ liệu luôn tươi mới
+        // onValue đảm bảo mọi trang đều thấy dữ liệu giống nhau ngay lập tức
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
-            const currentName = data.fullName || "";
             setUserData({
-              fullName: currentName,
+              fullName: data.fullName || "QUÂN NHÂN",
               role: data.role || "CHIẾN SĨ",
               uid: user.uid,
               avatarUrl: data.avatarUrl || "",
+              email: user.email || "",
               wallpaperUrl: data.wallpaperUrl || ""
             });
-            // Chỉ cập nhật input nếu người dùng không đang gõ
-            if (!isUpdating) setNewName(currentName);
+            if (!isUpdating) setNewName(data.fullName || "");
           }
         });
       }
@@ -44,46 +40,42 @@ const SettingsView: React.FC = () => {
     return () => unsubscribe();
   }, [auth, db, isUpdating]);
 
-  // 2. HÀM LƯU "THÉP": Ép ghi đè vĩnh viễn
-  const handleSaveVinhVien = async () => {
+  // 2. HÀM LƯU VĨNH VIỄN - ÉP CẬP NHẬT TOÀN HỆ THỐNG
+  const handleSavePermanent = async () => {
     if (!auth.currentUser || !newName.trim()) return;
-    
     setIsUpdating(true);
+
     try {
       const userRef = ref(db, `users/${auth.currentUser.uid}`);
-      const finalName = newName.trim().toUpperCase();
-      
       const updates: any = {
-        fullName: finalName,
-        // Thêm timestamp để ép trình duyệt nhận diện đây là bản ghi mới nhất
-        lastSync: Date.now() 
+        fullName: newName.trim().toUpperCase(),
+        lastUpdate: Date.now() // Ép hệ thống nhận diện bản ghi mới nhất
       };
 
       if (previewImage) updates.avatarUrl = previewImage;
       if (previewWallpaper) updates.wallpaperUrl = previewWallpaper;
 
-      // Ghi trực tiếp vào Database
+      // Ghi đè vĩnh viễn
       await update(userRef, updates);
-
-      // Xóa các bản xem trước sau khi đã lưu thật
+      
       setPreviewImage(null);
       setPreviewWallpaper(null);
-      
-      alert("✅ ĐÃ KHÓA DỮ LIỆU VĨNH VIỄN VÀO HỆ THỐNG!");
+      alert("✅ HỆ THỐNG: ĐÃ LƯU VÀ ĐỒNG BỘ VĨNH VIỄN!");
     } catch (error) {
-      alert("❌ LỖI GHI DỮ LIỆU: Kiểm tra lại quyền Firebase!");
+      alert("❌ LỖI KẾT NỐI DATABASE!");
     } finally {
       setIsUpdating(false);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8">
-      {/* GIAO DIỆN CỘT TRÁI - CARD TRỰC QUAN */}
-      <div className="md:w-[35%] bg-white rounded-[3.5rem] shadow-2xl border border-slate-50 overflow-hidden">
-        <div className="h-32 bg-slate-100 relative group">
+    <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 animate-in fade-in duration-500">
+      
+      {/* CỘT 1: THẺ NHẬN DIỆN (Sửa lỗi không hiện tên) */}
+      <div className="md:w-[35%] bg-white rounded-[3.5rem] shadow-2xl border border-slate-50 overflow-hidden flex flex-col">
+        <div className="h-32 bg-slate-100 relative">
           <img src={previewWallpaper || userData.wallpaperUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800"} 
-               className="w-full h-full object-cover opacity-50" alt="Wallpaper" />
+               className="w-full h-full object-cover opacity-60" />
           <button onClick={() => wallpaperInputRef.current?.click()} className="absolute top-4 right-4 p-2 bg-white/30 backdrop-blur-md rounded-xl text-white"><ImageIcon size={18} /></button>
           <input type="file" ref={wallpaperInputRef} className="hidden" accept="image/*" onChange={(e) => {
             const file = e.target.files?.[0];
@@ -110,18 +102,23 @@ const SettingsView: React.FC = () => {
                }
             }} />
           </div>
-          <h2 className="mt-6 text-2xl font-black text-slate-800 uppercase italic">{userData.fullName || "ĐANG TẢI..."}</h2>
+          
+          {/* HIỂN THỊ TÊN VÀNG (Khắc phục lỗi "Đang tải") */}
+          <h2 className="mt-6 text-2xl font-black text-slate-800 uppercase italic text-center">
+            {userData.fullName || "QUÂN NHÂN"}
+          </h2>
+          <p className="text-red-600 font-bold text-xs tracking-widest mt-1 uppercase">{userData.role}</p>
         </div>
       </div>
 
-      {/* GIAO DIỆN CỘT PHẢI - FORM NHẬP LIỆU */}
-      <div className="md:w-[65%] bg-white rounded-[3.5rem] p-12 shadow-2xl border border-slate-50">
+      {/* CỘT 2: CÀI ĐẶT VĨNH VIỄN */}
+      <div className="md:w-[65%] bg-white rounded-[3.5rem] p-12 shadow-2xl border border-slate-50 flex flex-col">
         <header className="mb-12">
           <h1 className="text-3xl font-black text-[#0f172a] uppercase italic tracking-tighter">Cài đặt vĩnh viễn</h1>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Dữ liệu sẽ được đồng bộ toàn hệ thống</p>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Dữ liệu được đồng bộ toàn hệ thống</p>
         </header>
 
-        <div className="space-y-10">
+        <div className="space-y-10 flex-1">
           <div className="space-y-4">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-4">Họ và tên quân nhân</label>
             <div className="relative">
@@ -134,16 +131,16 @@ const SettingsView: React.FC = () => {
               />
             </div>
           </div>
-
-          <button 
-            onClick={handleSaveVinhVien}
-            disabled={isUpdating}
-            className="w-full bg-[#0f172a] text-white p-7 rounded-[2.5rem] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-5 hover:bg-red-700 shadow-xl transition-all active:scale-95 disabled:opacity-50"
-          >
-            {isUpdating ? <Loader2 className="animate-spin" /> : <Save />}
-            XÁC NHẬN LƯU VĨNH VIỄN
-          </button>
         </div>
+
+        <button 
+          onClick={handleSavePermanent}
+          disabled={isUpdating}
+          className="w-full mt-12 bg-[#0f172a] text-white p-7 rounded-[2.5rem] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-5 hover:bg-red-700 shadow-xl transition-all active:scale-95 disabled:opacity-50"
+        >
+          {isUpdating ? <Loader2 className="animate-spin" /> : <Save />}
+          XÁC NHẬN LƯU VĨNH VIỄN
+        </button>
       </div>
     </div>
   );
