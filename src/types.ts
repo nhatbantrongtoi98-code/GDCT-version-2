@@ -1,4 +1,3 @@
-
 export interface ContentSection {
   id: string;
   title: string;
@@ -28,11 +27,15 @@ export interface BackgroundMusic {
   url: string;
 }
 
-export interface UserAccount {
+// THÊM ĐOẠN NÀY ĐỂ KHẮP PHỤC LỖI BUILD
+export interface User {
   username: string;
-  password?: string;
   role: 'admin' | 'user';
   avatarUrl?: string;
+}
+
+export interface UserAccount extends User {
+  password?: string;
 }
 
 export interface EntertainmentItem {
@@ -50,7 +53,7 @@ export interface QuizQuestion {
 export type AppData = {
   appName: string;
   appLogo?: string;
-  loginLogoUrl?: string; // Logo riêng cho trang đăng nhập
+  loginLogoUrl?: string;
   globalBackground?: string;
   loginImageUrl?: string;
   loginMessage?: string;
