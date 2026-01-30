@@ -27,7 +27,7 @@ export interface BackgroundMusic {
   url: string;
 }
 
-// THÊM ĐOẠN NÀY ĐỂ KHẮP PHỤC LỖI BUILD
+// Cấu trúc User để Layout và Login không bị lỗi
 export interface User {
   username: string;
   role: 'admin' | 'user';
