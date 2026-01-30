@@ -5,7 +5,7 @@ import Layout from './components/Layout';
 // Import các Views từ thư mục src/views/
 import HomeView from './views/HomeView';
 import HistoryView from './views/HistoryVNView';
-import UnitTraditionView from './views/TraditionView';
+import UnitTraditionView from './views/UnitTraditionView';
 import LecturesView from './views/LecturesView';
 import EntertainmentView from './views/EntertainmentView';
 import WiseSoldierView from './views/WiseSoldierView';
