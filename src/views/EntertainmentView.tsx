@@ -1,139 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import { Music, Edit2, FileAudio, FileVideo, Save, Loader2, Youtube } from 'lucide-react';
-import { ref, set, onValue } from "firebase/database";
-import { db } from "./firebase-config";
 
-const EntertainmentView: React.FC<{ isAdmin: boolean }> = ({ isAdmin }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+import React from 'react';
+import { Music, Play, Radio } from 'lucide-react';
+import AdminEditPrompt from '../components/AdminEditPrompt';
+import { User } from '../types';
+import { SONGS, DANCES } from '../constants';
 
-  // Khởi tạo trạng thái an toàn cho môi trường Build
-  const [songs, setSongs] = useState<any[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('OFFLINE_SONGS');
-      return saved ? JSON.parse(saved) : Array.from({ length: 15 }, (_, i) => ({ id: `s-${i}`, name: `Bài hát ${i + 1}`, embedUrl: '' }));
-    }
-    return Array.from({ length: 15 }, (_, i) => ({ id: `s-${i}`, name: `Bài hát ${i + 1}`, embedUrl: '' }));
-  });
+interface EntertainmentViewProps {
+  user: User;
+  currentPage: string;
+}
 
-  const [dances, setDances] = useState<any[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('OFFLINE_DANCES');
-      return saved ? JSON.parse(saved) : Array.from({ length: 5 }, (_, i) => ({ id: `d-${i}`, name: `Điệu vũ ${i + 1}`, embedUrl: '' }));
-    }
-    return Array.from({ length: 5 }, (_, i) => ({ id: `d-${i}`, name: `Điệu vũ ${i + 1}`, embedUrl: '' }));
-  });
-
-  // ĐỒNG BỘ REALTIME
-  useEffect(() => {
-    const entertainmentRef = ref(db, 'military_entertainment');
-    const unsubscribe = onValue(entertainmentRef, (snapshot) => {
-      const fbData = snapshot.val();
-      if (fbData) {
-        setSongs(fbData.songs || []);
-        setDances(fbData.dances || []);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('OFFLINE_SONGS', JSON.stringify(fbData.songs));
-          localStorage.setItem('OFFLINE_DANCES', JSON.stringify(fbData.dances));
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const formatUrl = (url: string) => {
-    if (!url || url.includes('embed')) return url;
-    const id = url.includes('v=') ? url.split('v=')[1]?.split('&')[0] : url.split('youtu.be/')[1]?.split('?')[0];
-    return id ? `https://www.youtube.com/embed/${id}` : url;
-  };
-
-  const handleSave = async () => {
-    if (!isAdmin) return;
-    setIsSaving(true);
-    const finalSongs = songs.map(s => ({ ...s, embedUrl: formatUrl(s.embedUrl) }));
-    const finalDances = dances.map(d => ({ ...d, embedUrl: formatUrl(d.embedUrl) }));
-
-    try {
-      await set(ref(db, 'military_entertainment'), { songs: finalSongs, dances: finalDances });
-      setIsEditing(false);
-      alert("✅ ĐỒNG BỘ THÀNH CÔNG");
-    } catch (e) {
-      console.error(e);
-      alert("❌ LỖI KẾT NỐI");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+const EntertainmentView: React.FC<EntertainmentViewProps> = ({ user, currentPage }) => {
+  const isSongs = currentPage === 'songs';
+  const data = isSongs ? SONGS : DANCES;
+  const bgColor = isSongs ? 'bg-emerald-50' : 'bg-amber-50';
+  const iconColor = isSongs ? 'text-emerald-600' : 'text-amber-600';
 
   return (
-    <div className="p-4 max-w-7xl mx-auto space-y-6 text-slate-800">
-      <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="p-4 bg-red-800 rounded-3xl text-white shadow-lg"><Music size={28} /></div>
+    <div className={`p-6 md:p-12 min-h-full ${bgColor} animate-fadeIn`}>
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-3xl font-black text-[#2E4D23] mb-10 flex items-center uppercase">
+          <Music className={`mr-4 ${isSongs ? 'text-[#DA251D]' : iconColor}`} size={32} />
+          {isSongs ? '15 Bài hát quy định QĐNDVN' : '5 Điệu vũ Quân đội'}
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {data.map((item, idx) => (
+            <div 
+              key={idx} 
+              className="bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-stone-200 group flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-5">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl ${isSongs ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {(idx + 1).toString().padStart(2, '0')}
+                </div>
+                <div>
+                  <span className="font-bold text-stone-800 text-lg md:text-xl block">{item}</span>
+                  <span className="text-xs uppercase font-bold text-stone-400 tracking-widest">Chính quy - Văn hóa</span>
+                </div>
+              </div>
+              <button className={`${isSongs ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'} text-white p-3 rounded-full transition-transform active:scale-90 shadow-md`}>
+                <Play size={20} fill="currentColor" />
+              </button>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-12 bg-white/50 backdrop-blur-md p-6 rounded-3xl border border-white/20 flex items-center space-x-6">
+          <div className="animate-pulse text-[#DA251D]"><Radio size={40} /></div>
           <div>
-            <h2 className="text-2xl font-black uppercase italic leading-none">GÓC GIẢI TRÍ</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic mt-1">Đồng bộ trực tuyến 15 bài & 5 điệu</p>
-          </div>
-        </div>
-        {isAdmin && (
-          <button 
-            onClick={isEditing ? handleSave : () => setIsEditing(true)}
-            className={`px-8 py-4 rounded-2xl font-black text-[11px] text-white transition-all flex items-center gap-2 ${isEditing ? 'bg-green-600 animate-pulse' : 'bg-slate-900 shadow-xl'}`}
-          >
-            {isSaving ? <Loader2 className="animate-spin" size={18} /> : (isEditing ? <Save size={18} /> : <Edit2 size={18} />)}
-            {isEditing ? "XÁC NHẬN CẬP NHẬT" : "QUẢN TRỊ NỘI DUNG"}
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-50 p-6 rounded-[3rem] border border-slate-200 shadow-inner">
-          <h3 className="flex items-center gap-2 font-black uppercase italic mb-6 ml-4"><FileAudio className="text-red-700" /> 15 BÀI HÁT QUY ĐỊNH</h3>
-          <div className="space-y-3 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-            {songs.map((song, i) => (
-              <div key={song.id} className="bg-white p-4 rounded-3xl border shadow-sm">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="w-8 h-8 bg-red-800 text-white flex items-center justify-center rounded-xl text-[10px] font-black">{i + 1}</span>
-                  {isEditing ? (
-                    <input className="flex-1 text-[12px] font-bold border-b p-1 outline-none focus:border-red-500" value={song.name} onChange={e => setSongs(prev => prev.map(s => s.id === song.id ? { ...s, name: e.target.value } : s))} />
-                  ) : (
-                    <span className="text-[13px] font-black uppercase text-slate-700">{song.name}</span>
-                  )}
-                </div>
-                {isEditing ? (
-                  <input className="w-full text-[10px] p-2 bg-slate-50 rounded-xl italic border border-slate-200 mt-1" placeholder="Link Youtube..." value={song.embedUrl} onChange={e => setSongs(prev => prev.map(s => s.id === song.id ? { ...s, embedUrl: e.target.value } : s))} />
-                ) : (
-                  song.embedUrl && <iframe title={song.name} src={song.embedUrl} className="w-full aspect-video rounded-2xl mt-2 border shadow-inner" allowFullScreen loading="lazy" />
-                )}
-              </div>
-            ))}
+            <h4 className="font-bold text-[#2E4D23]">Góc truyền thanh nội bộ</h4>
+            <p className="text-sm text-stone-600 italic">Xây dựng đời sống văn hóa tinh thần lành mạnh, vui tươi trong đơn vị.</p>
           </div>
         </div>
 
-        <div className="bg-blue-50/50 p-6 rounded-[3rem] border border-blue-100 shadow-inner">
-          <h3 className="flex items-center gap-2 font-black text-slate-700 uppercase italic mb-6 ml-4"><FileVideo className="text-blue-700" /> 5 ĐIỆU VŨ QUÂN ĐỘI</h3>
-          <div className="space-y-6">
-            {dances.map((dance, i) => (
-              <div key={dance.id} className="bg-white p-6 rounded-[2.5rem] border-2 border-white shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                  <Youtube className="text-red-600" size={24} />
-                  {isEditing ? (
-                    <input className="flex-1 font-black text-slate-800 border-b outline-none text-[15px]" value={dance.name} onChange={e => setDances(prev => prev.map(d => d.id === dance.id ? { ...d, name: e.target.value } : d))} />
-                  ) : (
-                    <span className="font-black text-slate-800 uppercase italic text-[15px]">{dance.name}</span>
-                  )}
-                </div>
-                {isEditing ? (
-                  <input className="w-full text-[11px] p-3 bg-slate-50 rounded-2xl border" placeholder="Link video..." value={dance.embedUrl} onChange={e => setDances(prev => prev.map(d => d.id === dance.id ? { ...d, embedUrl: e.target.value } : d))} />
-                ) : (
-                  <div className="aspect-video bg-black rounded-[2rem] overflow-hidden shadow-2xl relative">
-                    {dance.embedUrl ? <iframe title={dance.name} src={dance.embedUrl} className="w-full h-full" allowFullScreen loading="lazy" /> : <div className="h-full flex items-center justify-center text-white/20 font-black italic text-xs">CHƯA CẬP NHẬT</div>}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <AdminEditPrompt user={user} onEdit={() => alert("Cập nhật danh mục giải trí")} />
       </div>
     </div>
   );
