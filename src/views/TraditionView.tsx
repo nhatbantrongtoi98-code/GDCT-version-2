@@ -1,40 +1,69 @@
-import React from 'react';
 
-const TraditionView = ({ isAdmin }: { isAdmin: boolean }) => {
-  const units = [
-    { name: 'LLVT Thủ đô', color: 'bg-red-50', logo: '🏛️' },
-    { name: 'Sư đoàn 301', color: 'bg-green-50', logo: '🛡️' },
-    { name: 'Trung đoàn 59', color: 'bg-blue-50', logo: '⚔️' },
-    { name: 'Trung đoàn 692', color: 'bg-orange-50', logo: '🔫' },
-    { name: 'Trung đoàn 757', color: 'bg-purple-50', logo: '🎖️' },
-  ];
+import React from 'react';
+import { Shield, Calendar, Award, MapPin } from 'lucide-react';
+import AdminEditPrompt from '../components/AdminEditPrompt';
+import { User } from '../types';
+import { UNIT_TRADITIONS } from '../constants';
+
+interface UnitTraditionViewProps {
+  user: User;
+  currentPage: string;
+}
+
+const UnitTraditionView: React.FC<UnitTraditionViewProps> = ({ user, currentPage }) => {
+  const unitId = currentPage.replace('unit-', '');
+  const unit = UNIT_TRADITIONS.find(u => u.id === unitId);
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-xl font-black text-slate-800 uppercase">Lịch sử Truyền thống</h1>
-        {isAdmin && (
-          <button className="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold animate-pulse">
-            SỬA NỘI DUNG
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {units.map(unit => (
-          <div key={unit.name} className={`${unit.color} p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group`}>
-            <div className="flex items-center gap-4">
-              <span className="text-4xl group-hover:scale-110 transition-transform">{unit.logo}</span>
-              <div>
-                <h3 className="font-black text-slate-800 uppercase text-sm leading-tight">{unit.name}</h3>
-                <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Bấm để tra cứu chi tiết</p>
-              </div>
-            </div>
+    <div className="p-6 md:p-12 min-h-full bg-green-50/50 animate-fadeIn">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-[#2E4D23] text-white p-8 md:p-12 rounded-t-[2rem] shadow-xl flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
+          <div className="bg-[#FFFF00] p-4 rounded-full text-[#2E4D23] shadow-inner">
+            <Shield size={64} />
           </div>
-        ))}
+          <div className="text-center md:text-left">
+            <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight">{unit?.name}</h2>
+            <p className="opacity-70 mt-2 italic text-lg">Phát huy truyền thống - Cống hiến tài năng</p>
+          </div>
+        </div>
+        
+        <div className="bg-white p-8 md:p-12 rounded-b-[2rem] shadow-sm border-x border-b border-stone-200 space-y-10">
+          <section>
+            <h4 className="font-black text-xl text-[#2E4D23] flex items-center mb-4 uppercase tracking-wider">
+              <Calendar className="mr-3 text-[#DA251D]" size={24} /> Lịch sử hình thành
+            </h4>
+            <p className="text-stone-700 leading-relaxed text-base md:text-lg">
+              {unit?.description}. Trải qua nhiều thập kỷ, đơn vị đã xây dựng nên những trang sử vàng chói lọi, luôn là lá cờ đầu trong các phong trào thi đua quyết thắng.
+            </p>
+          </section>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
+              <h4 className="font-black text-lg text-[#2E4D23] flex items-center mb-4 uppercase">
+                <Award className="mr-3 text-[#DA251D]" size={22} /> Thành tích
+              </h4>
+              <ul className="space-y-3 text-stone-600 font-medium">
+                <li className="flex items-start"><span className="text-[#DA251D] mr-2">•</span> Huân chương Quân công hạng Nhất</li>
+                <li className="flex items-start"><span className="text-[#DA251D] mr-2">•</span> Danh hiệu Anh hùng LLVT Nhân dân</li>
+                <li className="flex items-start"><span className="text-[#DA251D] mr-2">•</span> Nhiều năm liền nhận cờ thi đua Chính phủ</li>
+              </ul>
+            </section>
+
+            <section className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
+              <h4 className="font-black text-lg text-[#2E4D23] flex items-center mb-4 uppercase">
+                <MapPin className="mr-3 text-[#DA251D]" size={22} /> Địa bàn
+              </h4>
+              <p className="text-stone-600 italic">
+                Sẵn sàng chiến đấu và cơ động trên mọi địa hình, gắn bó máu thịt với nhân dân Thủ đô và các địa phương đóng quân.
+              </p>
+            </section>
+          </div>
+          
+          <AdminEditPrompt user={user} onEdit={() => alert(`Cập nhật truyền thống ${unit?.name}`)} />
+        </div>
       </div>
     </div>
   );
 };
 
-export default TraditionView;
+export default UnitTraditionView;
