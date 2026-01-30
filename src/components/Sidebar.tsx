@@ -1,83 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { Home, History, BookOpen, Gamepad2, Settings, ShieldCheck } from 'lucide-react';
-import { getDatabase, ref, onValue } from "firebase/database";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import React from 'react';
+import { Home, History, BookOpen, Gamepad2, Settings, ShieldCheck, Trophy, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   onNavigate: (id: string) => void;
   activeTab: string;
+  onLogout: () => void;
+  username: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeTab }) => {
-  const [userData, setUserData] = useState({ 
-    fullName: "QUÂN NHÂN", 
-    role: "SĨ QUAN QUẢN LÝ", 
-    avatarUrl: "" 
-  });
-  
-  const auth = getAuth();
-  const db = getDatabase();
-
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userRef = ref(db, `users/${user.uid}`);
-        onValue(userRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            setUserData({
-              fullName: data.fullName || "QUÂN NHÂN",
-              role: data.role || "SĨ QUAN QUẢN LÝ",
-              avatarUrl: data.avatarUrl || ""
-            });
-          }
-        });
-      }
-    });
-    return () => unsubscribeAuth();
-  }, [auth, db]);
-
-  // ID ở đây phải khớp 100% với Case trong App.tsx
+const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeTab, onLogout, username }) => {
   const menuItems = [
-    { id: 'dashboard', icon: <Home size={20} />, label: 'Trang chủ' },
-    { id: 'history-vn', icon: <History size={20} />, label: 'Lịch sử Dân tộc Việt Nam' },
-    { id: 'tradition', icon: <ShieldCheck size={20} />, label: 'Lịch sử, truyền thống đơn vị' },
-    { id: 'bai-giang', icon: <BookOpen size={20} />, label: 'Bài giảng chính trị' },
-    { id: 'game', icon: <Gamepad2 size={20} />, label: 'Chiến sĩ thông thái' },
-    { id: 'settings', icon: <Settings size={20} />, label: 'Cài đặt' },
+    { id: 'dashboard', icon: <Home size={18} />, label: 'Trang chủ' },
+    { id: 'history-vn', icon: <History size={18} />, label: 'Lịch sử QĐND VN' },
+    { id: 'tradition', icon: <ShieldCheck size={18} />, label: 'Truyền thống đơn vị' },
+    { id: 'bai-giang', icon: <BookOpen size={18} />, label: 'Bài giảng chính trị' },
+    { id: 'game', icon: <Gamepad2 size={18} />, label: 'Chiến sĩ thông thái' },
+    { id: 'settings', icon: <Settings size={18} />, label: 'Cài đặt hệ thống' },
   ];
 
   return (
-    <div className="w-72 h-screen bg-white border-r border-slate-100 flex flex-col p-6 shadow-sm sticky top-0">
-      <div className="flex items-center gap-3 mb-10 px-2">
-        <div className="text-red-700 font-black italic leading-tight text-lg uppercase tracking-tighter">SỔ TAY GDCT</div>
+    <div className="w-72 h-screen bg-[#1a2e12] flex flex-col p-4 shadow-xl shrink-0">
+      <div className="p-4 mb-6 border-b border-white/10">
+        <h1 className="text-yellow-500 font-black text-lg italic uppercase leading-tight">
+          Bổ trợ học tập chính trị
+        </h1>
+        <p className="text-white/40 text-[10px] uppercase tracking-tighter mt-1 italic">
+          Kỷ cương - Trách nhiệm - Quyết thắng
+        </p>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-1">
         {menuItems.map((item) => (
-          <div 
-            key={item.id} 
-            onClick={() => onNavigate(item.id)} // Kích hoạt lệnh điều hướng
-            className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${
+          <button
+            key={item.id}
+            onClick={() => onNavigate(item.id)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${
               activeTab === item.id 
-                ? 'bg-red-700 text-white shadow-lg shadow-red-200' 
-                : 'text-slate-500 hover:bg-slate-50'
+                ? 'bg-yellow-500 text-green-950 font-bold shadow-lg' 
+                : 'text-white/60 hover:bg-white/5 hover:text-white'
             }`}
           >
             {item.icon}
-            <span className="text-[11px] font-bold uppercase tracking-tighter leading-none">{item.label}</span>
-          </div>
+            <span className="text-[13px] font-bold uppercase tracking-tight">{item.label}</span>
+          </button>
         ))}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-3 px-2">
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-red-50 bg-slate-100">
-          <img src={userData.avatarUrl || "https://api.dicebear.com/7.x/initials/svg?seed=Admin"} className="w-full h-full object-cover" alt="User" />
+      <div className="mt-auto pt-4 border-t border-white/10">
+        <div className="flex items-center gap-3 p-2">
+          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white font-bold">
+            {username.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-white font-bold text-sm truncate">{username}</span>
+            <span className="text-white/40 text-[10px] uppercase">Học viên</span>
+          </div>
         </div>
-        <div className="flex flex-col overflow-hidden">
-          <span className="text-[11px] font-black text-slate-800 truncate uppercase italic">{userData.fullName}</span>
-          <span className="text-[8px] font-bold text-red-600 uppercase italic">{userData.role}</span>
-        </div>
+        <button 
+          onClick={onLogout}
+          className="w-full mt-4 flex items-center justify-center gap-2 py-3 text-red-400 hover:bg-red-500/10 rounded-xl text-xs font-bold uppercase transition-all"
+        >
+          <LogOut size={16} /> Đăng xuất
+        </button>
       </div>
     </div>
   );
