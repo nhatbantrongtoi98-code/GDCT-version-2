@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 // Quan trọng: Sử dụng tên file viết thường hoàn toàn
-import LoginView from './views/loginview'; 
+import LoginView from './views/Loginview'; 
 import Layout from './components/Layout';
 import { INITIAL_DATA } from './constants';
 import { User as UserType } from './types';
