@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Quan trọng: Sử dụng tên file viết thường hoàn toàn
 import LoginView from './views/LoginView'; 
 import Layout from './components/Layout';
 import { INITIAL_DATA } from './constants';
@@ -8,48 +7,83 @@ import { User as UserType } from './types';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserType | null>(null);
+  
+  // Quản lý mục đang được chọn
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleLogin = (username: string) => {
     setIsLoggedIn(true);
-    setUser({ 
-      id: '1',
-      username: username, 
-      role: 'user', 
-      displayName: username 
-    });
+    setUser({ id: '1', username, role: 'user', displayName: username });
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUser(null);
+    setActiveTab('dashboard');
   };
 
   if (!isLoggedIn) {
     return <LoginView onLogin={handleLogin} />;
   }
 
+  // Hàm quyết định nội dung gì sẽ hiển thị ở vùng chính
+  const renderMainContent = () => {
+    switch (activeTab) {
+      case 'intro':
+        return (
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 animate-fadeIn">
+            <h3 className="text-2xl font-black text-green-900 mb-4 uppercase">{INITIAL_DATA.intro.title}</h3>
+            <p className="text-stone-700 leading-relaxed whitespace-pre-line text-justify">{INITIAL_DATA.intro.body}</p>
+          </div>
+        );
+      case 'history-vn':
+        return (
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 animate-fadeIn text-justify">
+            <h3 className="text-2xl font-black text-red-700 mb-4 uppercase">{INITIAL_DATA.historyVN.title}</h3>
+            <p className="text-stone-700 leading-relaxed whitespace-pre-line">{INITIAL_DATA.historyVN.body}</p>
+          </div>
+        );
+      case 'tradition':
+        return (
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 animate-fadeIn text-justify">
+            <h3 className="text-2xl font-black text-yellow-600 mb-4 uppercase">{INITIAL_DATA.tradition.title}</h3>
+            <p className="text-stone-700 leading-relaxed whitespace-pre-line">{INITIAL_DATA.tradition.body}</p>
+          </div>
+        );
+      default:
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fadeIn">
+            <div className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-stone-200/50 border border-green-500/10">
+              <div className="w-16 h-16 bg-green-900 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                <span className="text-3xl">🎖️</span>
+              </div>
+              <h3 className="font-black text-green-900 text-xl mb-3 uppercase tracking-tight">Hệ thống giáo dục chính trị</h3>
+              <p className="text-stone-600 leading-relaxed">
+                Chào mừng đồng chí **{user?.displayName}**. Hãy chọn các chuyên mục bên trái để bắt đầu nghiên cứu và học tập.
+              </p>
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
-    <Layout user={user} onLogout={handleLogout}>
-      <div className="p-8 max-w-7xl mx-auto animate-fadeIn bg-stone-50 min-h-[80vh] rounded-[2rem] mt-4 shadow-inner">
+    <Layout 
+      user={user} 
+      onLogout={handleLogout} 
+      onNavigate={setActiveTab} // Truyền hàm đổi tab xuống Sidebar
+      activeTab={activeTab}      // Truyền tab hiện tại để Sidebar biết mục nào đang chọn
+    >
+      <div className="p-4 md:p-8 max-w-5xl mx-auto">
         <header className="mb-10 text-center">
-          <h2 className="text-3xl font-black text-[#1a2e12] uppercase tracking-widest mb-2">
+          <h2 className="text-3xl font-black text-green-950 uppercase tracking-widest">
             {INITIAL_DATA.appName}
           </h2>
-          <div className="h-1.5 w-20 bg-red-600 mx-auto mt-4 rounded-full shadow-sm" />
-          <p className="mt-4 text-stone-500 font-medium italic">Quân đội nhân dân Việt Nam</p>
+          <div className="h-1.5 w-24 bg-red-600 mx-auto mt-4 rounded-full" />
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="bg-white p-10 rounded-[2rem] shadow-xl shadow-stone-200/50 border border-stone-100">
-            <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
-              <span className="text-2xl">🎖️</span>
-            </div>
-            <h3 className="font-bold text-green-900 text-xl mb-3 uppercase tracking-tight">Sẵn sàng học tập</h3>
-            <p className="text-stone-600 leading-relaxed text-sm">
-              Chào mừng đồng chí đã đăng nhập thành công. Hãy chọn nội dung bài giảng hoặc lịch sử truyền thống ở menu bên trái để bắt đầu ôn tập.
-            </p>
-          </div>
-        </div>
+        {/* Đây là nơi nội dung thay đổi khi click Sidebar */}
+        {renderMainContent()}
       </div>
     </Layout>
   );
