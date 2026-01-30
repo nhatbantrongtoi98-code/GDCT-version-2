@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import Login from './components/Login';
+import Login from './views/Login';
 import Layout from './components/Layout';
 
 // Import các Views từ thư mục src/views/
 import HomeView from './views/HomeView';
-import HistoryView from './views/HistoryView';
-import UnitTraditionView from './views/UnitTraditionView';
+import HistoryView from './views/HistoryVNView';
+import UnitTraditionView from './views/TraditionView';
 import LecturesView from './views/LecturesView';
 import EntertainmentView from './views/EntertainmentView';
 import WiseSoldierView from './views/WiseSoldierView';
