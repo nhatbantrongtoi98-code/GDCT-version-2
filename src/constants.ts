@@ -1,5 +1,11 @@
+import { AppData, TraditionUnit } from './types';
 
-import { AppData } from './types';
+// Bổ sung export COLORS nếu Layout.tsx yêu cầu
+export const COLORS = {
+  primary: '#2E4D23',   // Xanh quân đội
+  secondary: '#DA251D', // Đỏ
+  accent: '#FFFF00',    // Vàng
+};
 
 export const INITIAL_DATA: AppData = {
   appName: 'Sổ tay Giáo dục Chính trị Điện tử',
@@ -112,3 +118,6 @@ export const INITIAL_DATA: AppData = {
     { title: "Bác đang cùng chúng cháu hành quân", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }
   ]
 };
+
+// Xuất bản UNIT_TRADITIONS dưới dạng mảng để các file cũ không bị lỗi
+export const UNIT_TRADITIONS: TraditionUnit[] = Object.values(INITIAL_DATA.tradition);
