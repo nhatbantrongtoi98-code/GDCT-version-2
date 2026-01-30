@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+// Đảm bảo các đường dẫn này khớp chính xác với tên file trong src/components/
 import Login from './components/Login';
 import Layout from './components/Layout';
-import { User } from './types';
 
-// Import các Views - Đảm bảo các file này tồn tại trong src/views/
+// Import các Views từ thư mục src/views/
 import HomeView from './views/HomeView';
 import HistoryView from './views/HistoryView';
 import UnitTraditionView from './views/UnitTraditionView';
@@ -13,10 +13,9 @@ import WiseSoldierView from './views/WiseSoldierView';
 import SettingsView from './views/SettingsView';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState('home');
 
-  // Khôi phục logic: Nhận string từ Login.tsx
   const handleLogin = (username: string) => {
     setUser({
       username,
@@ -31,45 +30,26 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (!user) return null;
-
-    if (currentPage === 'home') return <HomeView user={user} />;
-    if (currentPage === 'vpa-history') return <HistoryView user={user} />;
-    if (currentPage === 'wise-soldier') return <WiseSoldierView user={user} />;
     
-    if (currentPage.startsWith('unit-')) {
-      return <UnitTraditionView user={user} currentPage={currentPage} />;
+    // Logic điều hướng dựa trên trạng thái currentPage
+    switch (currentPage) {
+      case 'home': return <HomeView user={user} />;
+      case 'vpa-history': return <HistoryView user={user} />;
+      case 'wise-soldier': return <WiseSoldierView user={user} />;
+      case 'songs':
+      case 'dances': return <EntertainmentView user={user} currentPage={currentPage} />;
+      default:
+        if (currentPage.startsWith('unit-')) return <UnitTraditionView user={user} currentPage={currentPage} />;
+        if (currentPage.startsWith('lectures-')) return <LecturesView user={user} currentPage={currentPage} />;
+        if (currentPage.startsWith('settings-')) return <SettingsView user={user} currentPage={currentPage} />;
+        return <div className="p-10 text-center font-bold">NỘI DUNG ĐANG CẬP NHẬT</div>;
     }
-
-    if (currentPage.startsWith('lectures-')) {
-      return <LecturesView user={user} currentPage={currentPage} />;
-    }
-
-    if (currentPage === 'songs' || currentPage === 'dances') {
-      return <EntertainmentView user={user} currentPage={currentPage} />;
-    }
-
-    if (currentPage.startsWith('settings-')) {
-      return <SettingsView user={user} currentPage={currentPage} />;
-    }
-
-    return (
-      <div className="p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-        <h2 className="text-xl font-bold text-stone-400 uppercase">Nội dung đang cập nhật</h2>
-      </div>
-    );
   };
 
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
+  if (!user) return <Login onLogin={handleLogin} />;
 
   return (
-    <Layout 
-      user={user} 
-      onLogout={handleLogout} 
-      currentPage={currentPage} 
-      setCurrentPage={setCurrentPage}
-    >
+    <Layout user={user} onLogout={handleLogout} currentPage={currentPage} setCurrentPage={setCurrentPage}>
       {renderContent()}
     </Layout>
   );
