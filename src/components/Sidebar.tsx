@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Home, History, BookOpen, Gamepad2, Settings, ShieldCheck, Trophy } from 'lucide-react';
+import { Home, History, BookOpen, Gamepad2, Settings, ShieldCheck } from 'lucide-react';
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-// 1. Định nghĩa interface cho Props để nhận hàm điều hướng
 interface SidebarProps {
   onNavigate: (id: string) => void;
   activeTab: string;
@@ -38,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeTab }) => {
     return () => unsubscribeAuth();
   }, [auth, db]);
 
-  // 2. Thêm ID cho menuItems để khớp với App.tsx
+  // ID ở đây phải khớp 100% với Case trong App.tsx
   const menuItems = [
     { id: 'dashboard', icon: <Home size={20} />, label: 'Trang chủ' },
     { id: 'history-vn', icon: <History size={20} />, label: 'Lịch sử Dân tộc Việt Nam' },
@@ -49,18 +48,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeTab }) => {
   ];
 
   return (
-    <div className="w-72 h-screen bg-white border-r border-slate-100 flex flex-col p-6 shadow-sm">
+    <div className="w-72 h-screen bg-white border-r border-slate-100 flex flex-col p-6 shadow-sm sticky top-0">
       <div className="flex items-center gap-3 mb-10 px-2">
-         <img src="/vpa-logo.png" alt="Logo" className="w-8 h-8" />
-        <div className="text-red-700 font-black italic leading-tight text-lg uppercase">SỔ TAY GDCT</div>
+        <div className="text-red-700 font-black italic leading-tight text-lg uppercase tracking-tighter">SỔ TAY GDCT</div>
       </div>
 
       <nav className="flex-1 space-y-2">
         {menuItems.map((item) => (
           <div 
             key={item.id} 
-            // 3. THÊM SỰ KIỆN CLICK Ở ĐÂY
-            onClick={() => onNavigate(item.id)}
+            onClick={() => onNavigate(item.id)} // Kích hoạt lệnh điều hướng
             className={`flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer transition-all ${
               activeTab === item.id 
                 ? 'bg-red-700 text-white shadow-lg shadow-red-200' 
@@ -68,12 +65,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeTab }) => {
             }`}
           >
             {item.icon}
-            <span className="text-[13px] font-bold uppercase tracking-tighter">{item.label}</span>
+            <span className="text-[11px] font-bold uppercase tracking-tighter leading-none">{item.label}</span>
           </div>
         ))}
       </nav>
 
-      {/* User info giữ nguyên... */}
+      <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-3 px-2">
+        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-red-50 bg-slate-100">
+          <img src={userData.avatarUrl || "https://api.dicebear.com/7.x/initials/svg?seed=Admin"} className="w-full h-full object-cover" alt="User" />
+        </div>
+        <div className="flex flex-col overflow-hidden">
+          <span className="text-[11px] font-black text-slate-800 truncate uppercase italic">{userData.fullName}</span>
+          <span className="text-[8px] font-bold text-red-600 uppercase italic">{userData.role}</span>
+        </div>
+      </div>
     </div>
   );
 };
