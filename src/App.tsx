@@ -1,26 +1,74 @@
+
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Layout from './components/Layout';
-import { UserAccount } from './types';
+import { User } from './types';
 
-// Lưu ý: Đảm bảo các file này đã tồn tại trong thư mục src/views/
-// Nếu chưa có, đồng chí có thể tạm thời comment lại
+// Import các Views
 import HomeView from './views/HomeView';
-import TraditionView from './views/TraditionView';
+import HistoryView from './views/HistoryView';
+import UnitTraditionView from './views/UnitTraditionView';
 import LecturesView from './views/LecturesView';
 import EntertainmentView from './views/EntertainmentView';
+import WiseSoldierView from './views/WiseSoldierView';
 import SettingsView from './views/SettingsView';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<UserAccount | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [currentPage, setCurrentPage] = useState('home');
 
-  const handleLogin = (userData: UserAccount) => {
-    setUser(userData);
+  const handleLogin = (username: string) => {
+    setUser({
+      username,
+      role: username === 'admin123' ? 'admin' : 'user'
+    });
   };
 
   const handleLogout = () => {
     setUser(null);
+    setCurrentPage('home');
+  };
+
+  const renderContent = () => {
+    if (!user) return null;
+
+    // Phân luồng render các View dựa trên currentPage
+    if (currentPage === 'home') return <HomeView user={user} />;
+    if (currentPage === 'vpa-history') return <HistoryView user={user} />;
+    if (currentPage === 'wise-soldier') return <WiseSoldierView user={user} />;
+    
+    // Trang truyền thống đơn vị (tập con)
+    if (currentPage.startsWith('unit-')) {
+      return <UnitTraditionView user={user} currentPage={currentPage} />;
+    }
+
+    // Trang bài giảng (tập con)
+    if (currentPage.startsWith('lectures-')) {
+      return <LecturesView user={user} currentPage={currentPage} />;
+    }
+
+    // Trang giải trí (tập con)
+    if (currentPage === 'songs' || currentPage === 'dances') {
+      return <EntertainmentView user={user} currentPage={currentPage} />;
+    }
+
+    // Trang cài đặt (tập con)
+    if (currentPage.startsWith('settings-')) {
+      return <SettingsView user={user} currentPage={currentPage} />;
+    }
+
+    // Default Fallback
+    return (
+      <div className="p-12 text-center h-full flex flex-col items-center justify-center bg-stone-100">
+        <h2 className="text-2xl font-bold text-stone-400">Nội dung đang được cập nhật...</h2>
+        <button 
+          onClick={() => setCurrentPage('home')} 
+          className="mt-4 px-6 py-2 bg-[#DA251D] text-white rounded-full font-bold hover:bg-red-700 transition-colors"
+        >
+          Quay về trang chủ
+        </button>
+      </div>
+    );
   };
 
   if (!user) {
@@ -28,20 +76,16 @@ const App: React.FC = () => {
   }
 
   return (
-    <Router>
-      <Layout currentUser={user} onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<HomeView />} />
-          <Route path="/tradition" element={<TraditionView isAdmin={user.username === 'admin123'} />} />
-          <Route path="/lectures" element={<LecturesView isAdmin={user.username === 'admin123'} />} />
-          <Route path="/entertainment" element={<EntertainmentView />} />
-          <Route path="/settings" element={<SettingsView currentUser={user} />} />
-          {/* Trang mặc định khi không tìm thấy đường dẫn */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <Layout 
+      user={user} 
+      onLogout={handleLogout} 
+      currentPage={currentPage} 
+      setCurrentPage={setCurrentPage}
+    >
+      {renderContent()}
+    </Layout>
   );
 };
 
 export default App;
+
