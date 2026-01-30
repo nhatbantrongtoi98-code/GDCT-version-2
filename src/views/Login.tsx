@@ -1,70 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { QrCode, LogIn } from 'lucide-react';
+import React, { useState } from 'react';
 
-const Login: React.FC = () => {
-  // Trạng thái lưu trữ ảnh nền lấy từ bộ nhớ
-  const [bgImage, setBgImage] = useState<string>("");
+const Login = ({ onLogin }: any) => {
+  const [form, setForm] = useState({ user: '', pass: '' });
 
-  useEffect(() => {
-    // ⚡ BƯỚC QUAN TRỌNG: Truy xuất ảnh nền mà Admin đã tải lên từ máy tính
-    const savedBg = localStorage.getItem('login_bg');
-    if (savedBg) {
-      setBgImage(savedBg);
-    }
-  }, []);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Logic kiểm tra admin123 hoặc user thường
+    onLogin({ 
+      username: form.user, 
+      role: form.user === 'admin123' ? 'Quản trị viên' : 'Học viên' 
+    });
+  };
 
   return (
-    <div 
-      className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center transition-all duration-700"
-      style={{ 
-        // Nếu đã tải ảnh lên thì dùng ảnh đó, nếu chưa thì dùng ảnh mặc định (hoặc màu nền)
-        backgroundImage: bgImage ? `url(${bgImage})` : `url('https://your-default-image-url.jpg')`,
-        backgroundColor: '#f1f5f9' 
-      }}
-    >
-      {/* Lớp phủ mờ để các ô nhập liệu dễ nhìn hơn nếu ảnh nền quá sáng */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px] z-0"></div>
-
-      {/* Khung đăng nhập trung tâm */}
-      <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row max-w-4xl w-full relative z-10 animate-in zoom-in-95 duration-500">
-        
-        {/* Khối bên trái: Mã QR & Khẩu hiệu mới */}
-        <div className="md:w-1/2 bg-[#8B1C1C] p-12 flex flex-col items-center justify-center text-center text-white space-y-8">
-          <div className="bg-white p-4 rounded-3xl shadow-lg">
-            <QrCode size={160} className="text-[#8B1C1C]" />
+    <div className="min-h-screen flex items-center justify-center bg-[#064e3b] p-4 bg-gradient-to-br from-[#064e3b] to-[#022c22]">
+      <div className="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-md border-t-8 border-red-600 animate-fade-in">
+        <div className="flex flex-col items-center mb-8">
+          {/* Logo VPA Hoạt hình */}
+          <div className="w-24 h-24 mb-4 animate-float">
+             <img src="/vpa-logo.png" alt="VPA" className="w-full h-full drop-shadow-lg" />
           </div>
-          <p className="text-[11px] font-black uppercase tracking-widest leading-relaxed px-4">
-            LỰC LƯỢNG VŨ TRANG THỦ ĐÔ HÀ NỘI<br/>
-            VƯƠN MÌNH TRONG KỶ NGUYÊN MỚI
-          </p>
+          <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Hệ thống học tập</h2>
+          <p className="text-red-600 font-bold text-xs uppercase tracking-widest mt-1 italic">Quân đội nhân dân Việt Nam</p>
         </div>
 
-        {/* Khối bên phải: Form nhập liệu */}
-        <div className="md:w-1/2 p-12 flex flex-col justify-center space-y-8">
-          <h2 className="text-2xl font-black text-slate-800 uppercase italic tracking-tighter">ĐĂNG NHẬP</h2>
-          
-          <div className="space-y-4">
+        <form onSubmit={submit} className="space-y-5">
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase ml-1">Tài khoản quân số</label>
             <input 
               type="text" 
-              placeholder="Tài khoản đăng nhập" 
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 ring-red-100" 
-            />
-            <input 
-              type="Password" 
-              placeholder="Mật mã" 
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 ring-red-100" 
+              required
+              className="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-red-600/10 focus:border-red-600 transition-all font-bold text-slate-700"
+              onChange={e => setForm({...form, user: e.target.value})}
             />
           </div>
-
-          <button className="w-full bg-[#CC2020] text-white py-4 rounded-xl font-black text-[12px] uppercase shadow-lg hover:bg-red-800 transition-all flex items-center justify-center gap-2">
-            VÀO HỆ THỐNG <LogIn size={16} />
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase ml-1">Mật khẩu bảo mật</label>
+            <input 
+              type="password" 
+              required
+              className="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-red-600/10 focus:border-red-600 transition-all font-bold tracking-widest text-slate-700"
+              onChange={e => setForm({...form, pass: e.target.value})}
+            />
+          </div>
+          <button className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-red-900/20 active:scale-95 transition-all mt-4">
+            Vào hệ thống
           </button>
-
-          <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-            CHƯA CÓ TÀI KHOẢN? ĐĂNG KÝ
-          </p>
-        </div>
+        </form>
       </div>
+
+      <style>{`
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 };
