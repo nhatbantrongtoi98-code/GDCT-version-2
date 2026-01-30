@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import VpaLogo from 'src/components/VpaLogo';
+import VpaLogo from "../components/VpaLogo";
 import { User as UserIcon, Lock, AlertCircle, ChevronRight } from 'lucide-react';
 
 interface LoginProps {
