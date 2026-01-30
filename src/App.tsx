@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Đảm bảo các đường dẫn này khớp chính xác với tên file trong src/components/
 import Login from './components/Login';
 import Layout from './components/Layout';
 
@@ -31,7 +30,6 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (!user) return null;
     
-    // Logic điều hướng dựa trên trạng thái currentPage
     switch (currentPage) {
       case 'home': return <HomeView user={user} />;
       case 'vpa-history': return <HistoryView user={user} />;
@@ -42,7 +40,11 @@ const App: React.FC = () => {
         if (currentPage.startsWith('unit-')) return <UnitTraditionView user={user} currentPage={currentPage} />;
         if (currentPage.startsWith('lectures-')) return <LecturesView user={user} currentPage={currentPage} />;
         if (currentPage.startsWith('settings-')) return <SettingsView user={user} currentPage={currentPage} />;
-        return <div className="p-10 text-center font-bold">NỘI DUNG ĐANG CẬP NHẬT</div>;
+        return (
+          <div className="p-10 text-center flex flex-col items-center justify-center">
+             <h2 className="text-xl font-bold text-gray-400">NỘI DUNG ĐANG CẬP NHẬT</h2>
+          </div>
+        );
     }
   };
 
