@@ -1,145 +1,109 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Monitor, Edit2, Save, Image as ImageIcon, 
-  ChevronRight, BookOpen, ArrowLeft, X 
-} from 'lucide-react';
-import { AppData } from '../types';
 
-// Định nghĩa cấu trúc chuẩn để khớp với Firebase
-interface Lesson {
-  id: string;
-  title: string;
-  content: string;
-  image?: string;
+import React, { useState } from 'react';
+import { FileText, ChevronRight, BookOpen, Clock, CheckCircle2, ArrowLeft } from 'lucide-react';
+import AdminEditPrompt from '../components/AdminEditPrompt';
+import { User } from '../types';
+import { LECTURES_NEW_SOLDIERS, LECTURES_HSQ_CS } from '../constants';
+
+interface LecturesViewProps {
+  user: User;
+  currentPage: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  lessons: Lesson[];
-}
+const LecturesView: React.FC<LecturesViewProps> = ({ user, currentPage }) => {
+  const isCsm = currentPage === 'lectures-csm';
+  const lectures = isCsm ? LECTURES_NEW_SOLDIERS : LECTURES_HSQ_CS;
+  const [selectedLectureId, setSelectedLectureId] = useState<number | null>(null);
 
-const LecturesView: React.FC<{ data: AppData; isAdmin: boolean; onUpdateGlobal: (key: keyof AppData, value: any) => void }> = ({ data, isAdmin, onUpdateGlobal }) => {
-  const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const selectedLecture = lectures.find(l => l.id === selectedLectureId);
 
-  // LẤY DỮ LIỆU TỪ CLOUD (Nếu chưa có thì dùng danh sách mặc định)
-  const categories: Category[] = data.lectures_v2 || [
-    { 
-      id: 'cs-moi', name: 'CHIẾN SĨ MỚI', 
-      lessons: Array.from({ length: 6 }, (_, i) => ({ id: `cs-m-${i+1}`, title: `Bài ${i+1}: Nội dung giáo dục chiến sĩ mới`, content: 'Nội dung bài giảng đang cập nhật...' }))
-    },
-    { 
-      id: 'hsq-n1', name: 'HSQ-CS NĂM THỨ NHẤT', 
-      lessons: Array.from({ length: 6 }, (_, i) => ({ id: `n1-${i+1}`, title: `Bài ${i+1}: Nội dung giáo dục năm thứ nhất`, content: 'Nội dung bài giảng đang cập nhật...' }))
-    },
-    { 
-      id: 'hsq-n2', name: 'HSQ-CS NĂM THỨ HAI', 
-      lessons: Array.from({ length: 6 }, (_, i) => ({ id: `n2-${i+1}`, title: `Bài ${i+1}: Nội dung giáo dục năm thứ hai`, content: 'Nội dung bài giảng đang cập nhật...' }))
-    },
-  ];
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.size <= 2 * 1024 * 1024 && selectedLesson) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setSelectedLesson({ ...selectedLesson, image: ev.target?.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const saveLesson = () => {
-    if (selectedLesson && selectedCatId) {
-      // Cập nhật vào danh sách tổng
-      const newCategories = categories.map(cat => 
-        cat.id === selectedCatId 
-          ? { ...cat, lessons: cat.lessons.map(l => l.id === selectedLesson.id ? selectedLesson : l) }
-          : cat
-      );
-      
-      // ĐẨY LÊN CLOUD VĨNH VIỄN
-      onUpdateGlobal('lectures_v2' as any, newCategories);
-      setIsEditing(false);
-      alert("Đã lưu bài giảng lên hệ thống Cloud!");
-    }
-  };
-
-  if (selectedLesson) {
+  if (selectedLectureId && selectedLecture) {
     return (
-      <div className="space-y-6 animate-in slide-in-from-right duration-500">
-        <button onClick={() => setSelectedLesson(null)} className="flex items-center gap-2 text-slate-500 font-bold hover:text-red-700 transition-all">
-          <ArrowLeft size={20} /> QUAY LẠI DANH SÁCH BÀI
-        </button>
+      <div className="p-6 md:p-12 min-h-full bg-white animate-fadeIn">
+        <div className="max-w-3xl mx-auto">
+          <button 
+            onClick={() => setSelectedLectureId(null)}
+            className="flex items-center space-x-2 text-[#2E4D23] font-bold hover:text-[#DA251D] mb-8 transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span className="uppercase tracking-widest text-sm">Quay lại danh sách</span>
+          </button>
+          
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3 text-[#DA251D]">
+              <div className="bg-[#DA251D]/10 px-4 py-1 rounded-full font-black text-sm uppercase">Bài học {selectedLecture.id}</div>
+              <div className="h-px flex-1 bg-stone-100" />
+            </div>
+            
+            <h2 className="text-3xl md:text-4xl font-black text-[#2E4D23] leading-tight">
+              {selectedLecture.title}
+            </h2>
+            
+            <div className="flex items-center space-x-6 text-stone-400 text-xs font-bold uppercase tracking-widest">
+              <span className="flex items-center"><Clock size={14} className="mr-1" /> 45 Phút</span>
+              <span className="flex items-center text-green-600"><CheckCircle2 size={14} className="mr-1" /> Giáo án đã duyệt</span>
+            </div>
 
-        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-50 relative">
-          {isAdmin && (
-            <button onClick={() => setIsEditing(!isEditing)} className="absolute top-8 right-8 p-3 bg-slate-50 rounded-2xl hover:bg-red-700 hover:text-white transition-all">
-              {isEditing ? <X size={20} /> : <Edit2 size={20} />}
-            </button>
-          )}
-
-          {isEditing ? (
-            <div className="space-y-6">
-              <input className="w-full p-4 border-2 rounded-2xl font-black text-xl text-red-800" value={selectedLesson.title} onChange={e => setSelectedLesson({...selectedLesson, title: e.target.value})} />
-              <div className="flex gap-4">
-                <label className="flex-1 p-6 bg-slate-50 border-2 border-dashed rounded-3xl cursor-pointer hover:bg-red-50 flex flex-col items-center">
-                  <ImageIcon className="text-slate-400 mb-2" />
-                  <span className="text-[10px] font-black uppercase">Tải ảnh bài giảng</span>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-                </label>
-                {selectedLesson.image && <div className="w-32 h-24 rounded-2xl overflow-hidden shadow-md"><img src={selectedLesson.image} className="w-full h-full object-cover" /></div>}
+            <div className="prose prose-stone max-w-none pt-8 border-t border-stone-100">
+              <p className="text-xl text-stone-700 leading-relaxed first-letter:text-5xl first-letter:font-black first-letter:text-[#DA251D] first-letter:mr-3 first-letter:float-left">
+                {selectedLecture.content}
+              </p>
+              <div className="bg-stone-50 p-6 rounded-2xl mt-8 border-l-4 border-[#2E4D23]">
+                <h4 className="font-black text-[#2E4D23] mb-2 uppercase text-sm">Kết luận rút ra:</h4>
+                <p className="text-stone-600 italic">Mỗi quân nhân cần nắm vững nội dung bài học để vận dụng vào thực tiễn thực hiện nhiệm vụ tại đơn vị.</p>
               </div>
-              <textarea className="w-full h-96 p-6 border-2 rounded-3xl italic" value={selectedLesson.content} onChange={e => setSelectedLesson({...selectedLesson, content: e.target.value})} />
-              <button onClick={saveLesson} className="w-full bg-red-800 text-white py-4 rounded-2xl font-black shadow-lg">LƯU VÀ ĐỒNG BỘ CLOUD</button>
             </div>
-          ) : (
-            <div className="space-y-8">
-              <h2 className="text-3xl font-black text-red-800 uppercase italic border-l-8 border-red-800 pl-6">{selectedLesson.title}</h2>
-              {selectedLesson.image && <img src={selectedLesson.image} className="w-full rounded-[2.5rem] shadow-2xl" />}
-              <div className="text-lg text-slate-700 leading-relaxed font-medium italic whitespace-pre-line">{selectedLesson.content}</div>
-            </div>
-          )}
+            
+            <AdminEditPrompt user={user} onEdit={() => alert(`Sửa nội dung: ${selectedLecture.title}`)} />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex items-center gap-6">
-        <div className="p-5 bg-red-700 rounded-3xl text-white shadow-lg"><Monitor size={40} /></div>
-        <div>
-          <h2 className="text-4xl font-black text-red-800 uppercase italic tracking-tighter">TÓM TẮT CÁC BÀI GIẢNG CHÍNH TRỊ</h2>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Dữ liệu lưu trữ trực tuyến</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        {categories.map((cat) => (
-          <div key={cat.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50 overflow-hidden group">
-            <h3 className="text-xl font-black text-slate-800 uppercase mb-6 flex items-center gap-3">
-              <div className="w-2 h-8 bg-red-700 rounded-full"></div> {cat.name}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {cat.lessons.map((lesson) => (
-                <button
-                  key={lesson.id}
-                  onClick={() => { setSelectedCatId(cat.id); setSelectedLesson(lesson); }}
-                  className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-red-800 hover:text-white transition-all group/item"
-                >
-                  <div className="flex items-center gap-4">
-                    <BookOpen size={18} className="text-red-700 group-hover/item:text-white" />
-                    <span className="text-xs font-bold uppercase truncate max-w-[180px]">{lesson.title}</span>
-                  </div>
-                  <ChevronRight size={16} className="opacity-0 group-hover/item:opacity-100 translate-x-[-10px] group-hover/item:translate-x-0 transition-all" />
-                </button>
-              ))}
-            </div>
+    <div className="p-6 md:p-12 min-h-full bg-stone-50 animate-fadeIn">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="space-y-2">
+            <h2 className="text-3xl md:text-5xl font-black text-[#2E4D23] flex items-center uppercase tracking-tight">
+              <BookOpen className="mr-4 text-[#DA251D]" size={40} />
+              Hệ thống Bài giảng
+            </h2>
+            <p className="text-stone-500 font-medium">
+              Đối tượng: <span className="text-[#DA251D] font-bold">{isCsm ? 'Chiến sĩ mới (6 bài)' : 'Hạ sĩ quan - Chiến sĩ (12 bài)'}</span>
+            </p>
           </div>
-        ))}
+          <div className="bg-[#2E4D23] text-[#FFFF00] px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg">
+            Học tập chính trị {new Date().getFullYear()}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {lectures.map(lecture => (
+            <div 
+              key={lecture.id} 
+              className="bg-white p-8 rounded-[2rem] shadow-sm border border-stone-200 hover:border-[#DA251D] hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden"
+              onClick={() => setSelectedLectureId(lecture.id)}
+            >
+              <div className="absolute top-0 right-0 p-6 text-stone-100 group-hover:text-red-50 transition-colors">
+                <span className="text-5xl font-black italic">0{lecture.id}</span>
+              </div>
+              <div className="bg-stone-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-[#DA251D] group-hover:text-white transition-all duration-500">
+                <FileText size={28} />
+              </div>
+              <h3 className="font-bold text-xl mb-4 text-[#2E4D23] leading-snug group-hover:text-[#DA251D] transition-colors">
+                {lecture.title}
+              </h3>
+              <p className="text-stone-400 text-sm line-clamp-2 mb-8 leading-relaxed font-medium">
+                Tìm hiểu về bản chất, truyền thống và các quy định kỷ luật quân đội...
+              </p>
+              <div className="flex items-center text-[#2E4D23] font-black text-xs uppercase tracking-widest group-hover:text-[#DA251D]">
+                Xem bài giảng <ChevronRight size={18} className="ml-2 group-hover:translate-x-2 transition-transform" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
