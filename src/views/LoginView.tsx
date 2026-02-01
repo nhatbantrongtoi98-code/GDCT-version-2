@@ -1,100 +1,234 @@
+
 import React, { useState } from 'react';
-import { User, Lock, ChevronRight, AlertCircle } from 'lucide-react';
+import VpaLogo from '../components/VpaLogo';
+import { User as UserIcon, Lock, AlertCircle, ChevronRight, QrCode, Laptop, Smartphone, CheckSquare, Square } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (username: string) => void;
 }
 
+type LoginMethod = 'password' | 'qrcode';
+
 const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
+  const [method, setMethod] = useState<LoginMethod>('password');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim() !== '' && password.trim() !== '') {
-      onLogin(username);
-    } else {
-      setError('Đồng chí vui lòng nhập đầy đủ thông tin!');
-    }
+    setIsLoading(true);
+    
+    // Giả lập xử lý đăng nhập
+    setTimeout(() => {
+      if (username.trim()) {
+        onLogin(username);
+      } else {
+        setError('Vui lòng nhập tên đăng nhập');
+        setIsLoading(false);
+      }
+    }, 1000);
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden font-sans bg-[#0a1407]">
-      {/* Background Ảnh Duyệt binh */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center"
-        style={{ 
-          backgroundImage: `url('https://vnanet.vn/Data/Articles/2024/05/07/7325607/vna_p_20240507090253_2961805.jpg')`,
-          filter: 'brightness(0.3) contrast(1.1)'
-        }}
-      />
-      
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a2e12]/90 via-transparent to-[#0a1407]/90 z-[1]" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-['Be_Vietnam_Pro'] selection:bg-[#DA251D] selection:text-white">
+      {/* Nền gradient chiều sâu quân đội */}
+      <div className="absolute inset-0 bg-[#1A2E14] z-[-2]" />
+      <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#DA251D]/15 rounded-full blur-[150px] z-[-1] animate-pulse" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-[#FFFF00]/10 rounded-full blur-[150px] z-[-1]" />
 
-      <div className="relative z-10 w-full max-w-md px-6">
-        <div className="relative bg-[#1a2e12]/40 backdrop-blur-xl rounded-[2.5rem] border border-green-500/30 shadow-2xl p-8">
-          
-          <div className="text-center mb-10">
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg" 
-              alt="Logo" 
-              className="w-24 h-24 mx-auto drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] mb-4"
-            />
-            <h1 className="text-yellow-500 text-2xl font-black uppercase tracking-widest leading-none">Bộ Quốc Phòng</h1>
-            <p className="text-white/60 text-[10px] uppercase tracking-[0.3em] mt-2 font-bold">Quân đội nhân dân Việt Nam</p>
+      <div className="w-full max-w-[480px] glass-effect rounded-[3rem] shadow-2xl relative overflow-hidden flex flex-col animate-fadeInUp border border-white/10">
+        {/* Military Ribbon Top */}
+        <div className="h-2 bg-gradient-to-r from-[#DA251D] via-[#FFFF00] to-[#DA251D]" />
+        
+        <div className="p-8 md:p-12">
+          <div className="flex flex-col items-center mb-10">
+            <div className="animate-subtle-logo p-2 bg-white/5 rounded-full backdrop-blur-sm shadow-inner mb-6">
+              <VpaLogo size={100} className="drop-shadow-[0_0_15px_rgba(218,37,29,0.5)]" />
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl md:text-3xl font-black text-[#1A2E14] tracking-tight uppercase leading-tight">Hệ Thống Quản Lý</h2>
+              <p className="text-[#2E4D23] font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] opacity-90">Học tập Chính trị QĐNDVN</p>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-xl flex items-center gap-2 animate-pulse">
-                <AlertCircle size={14} /> {error}
-              </div>
-            )}
+          {/* Tab Selector */}
+          <div className="flex bg-stone-100/80 p-1.5 rounded-2xl mb-8 border border-stone-200 shadow-inner">
+            <button 
+              onClick={() => setMethod('password')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                method === 'password' ? 'bg-white text-[#DA251D] shadow-md' : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              <Laptop size={14} />
+              <span>Tài khoản</span>
+            </button>
+            <button 
+              onClick={() => setMethod('qrcode')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                method === 'qrcode' ? 'bg-white text-[#DA251D] shadow-md' : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              <QrCode size={14} />
+              <span>Mã QR</span>
+            </button>
+          </div>
 
-            <div className="space-y-4">
+          {method === 'password' ? (
+            <form onSubmit={handleSubmit} className="space-y-5 animate-fadeIn">
               <div className="space-y-2">
-                <label className="text-[10px] text-yellow-500/80 uppercase tracking-widest font-bold ml-1">Tài khoản</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-green-400" size={18} />
-                  <input 
-                    type="text" 
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest ml-2">Tài khoản đơn vị</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-[#DA251D] transition-colors">
+                    <UserIcon size={18} />
+                  </div>
+                  <input
+                    type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Tên đăng nhập"
-                    className="w-full bg-black/40 border border-green-900/50 rounded-xl py-4 pl-12 pr-4 text-white outline-none focus:border-yellow-500/40 transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-white border-2 border-stone-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#DA251D]/5 focus:border-[#DA251D] transition-all text-sm md:text-base text-stone-800 placeholder:text-stone-300 shadow-sm"
+                    placeholder="Nhập tên đăng nhập..."
+                    required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] text-yellow-500/80 uppercase tracking-widest font-bold ml-1">Mật khẩu</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-green-400" size={18} />
-                  <input 
-                    type="password" 
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest ml-2">Mật khẩu bảo mật</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-[#DA251D] transition-colors">
+                    <Lock size={18} />
+                  </div>
+                  <input
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 bg-white border-2 border-stone-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#DA251D]/5 focus:border-[#DA251D] transition-all text-sm md:text-base text-stone-800 placeholder:text-stone-300 shadow-sm"
                     placeholder="••••••••"
-                    className="w-full bg-black/40 border border-green-900/50 rounded-xl py-4 pl-12 pr-4 text-white outline-none focus:border-yellow-500/40 transition-all"
+                    required
                   />
                 </div>
               </div>
+
+              {/* Remember Password & Forgot Link */}
+              <div className="flex items-center justify-between px-2">
+                <label className="flex items-center space-x-2 cursor-pointer group select-none">
+                  <div className="text-[#2E4D23]" onClick={() => setRememberMe(!rememberMe)}>
+                    {rememberMe ? <CheckSquare size={18} fill="currentColor" className="text-[#DA251D] fill-[#DA251D]/10" /> : <Square size={18} className="text-stone-300 group-hover:text-stone-400" />}
+                  </div>
+                  <span className="text-[11px] font-bold text-stone-500 uppercase tracking-tighter">Lưu mật khẩu</span>
+                </label>
+                <button type="button" className="text-[11px] font-bold text-[#2E4D23] hover:text-[#DA251D] uppercase tracking-tighter underline underline-offset-4">Quên mật khẩu?</button>
+              </div>
+
+              {error && (
+                <div className="flex items-center space-x-3 text-red-600 bg-red-50 p-4 rounded-xl border border-red-100 animate-shake">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span className="text-[10px] font-bold leading-tight uppercase tracking-tight">{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full py-4.5 rounded-2xl font-black text-white shadow-2xl transform transition-all active:scale-95 flex items-center justify-center space-x-3 group ${
+                  isLoading 
+                  ? 'bg-stone-400 cursor-not-allowed' 
+                  : 'bg-[#2E4D23] hover:bg-[#1A2E14] shadow-[#2E4D23]/40'
+                }`}
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span className="text-xs md:text-sm tracking-[0.2em] uppercase">Đăng nhập</span>
+                    <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+
+              <div className="pt-2 text-center">
+                <button 
+                  type="button"
+                  className="text-[11px] font-black text-[#DA251D] uppercase tracking-widest hover:text-[#B21E18] transition-colors"
+                  onClick={() => alert("Chuyển đến trang đăng ký tài khoản cán bộ/chiến sĩ.")}
+                >
+                  Chưa có tài khoản? Đăng ký ngay
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex flex-col items-center space-y-6 animate-fadeIn">
+              <div className="relative p-6 bg-white rounded-[2rem] shadow-xl border-2 border-[#FFFF00]/50 group cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => onLogin('Chiến sĩ')}>
+                <div className="absolute inset-0 bg-[#DA251D]/5 rounded-[2rem] animate-pulse" />
+                <div className="relative bg-white p-3 rounded-xl border border-stone-100">
+                  <div className="w-48 h-48 md:w-56 md:h-56 grid grid-cols-4 grid-rows-4 gap-2 opacity-80">
+                    {[...Array(16)].map((_, i) => (
+                      <div key={i} className={`rounded-sm ${Math.random() > 0.4 ? 'bg-[#1A2E14]' : 'bg-transparent'}`} />
+                    ))}
+                    <div className="absolute top-0 left-0 w-12 h-12 border-4 border-[#1A2E14] rounded-sm m-2" />
+                    <div className="absolute top-0 right-0 w-12 h-12 border-4 border-[#1A2E14] rounded-sm m-2" />
+                    <div className="absolute bottom-0 left-0 w-12 h-12 border-4 border-[#1A2E14] rounded-sm m-2" />
+                  </div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                   <div className="bg-white p-1 rounded-lg shadow-md border border-stone-200">
+                     <VpaLogo size={32} />
+                   </div>
+                </div>
+              </div>
+              
+              <div className="text-center space-y-3 px-4">
+                <p className="text-xs font-bold text-stone-700">Dùng ứng dụng di động để quét mã</p>
+                <div className="flex items-center justify-center space-x-2 text-[10px] text-stone-400 font-black uppercase tracking-widest">
+                  <Smartphone size={12} />
+                  <span>Chạm mã QR để giả lập quét thành công</span>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => onLogin('Chiến sĩ')}
+                className="text-[#DA251D] text-[10px] font-black uppercase tracking-widest hover:underline"
+              >
+                Gặp sự cố khi quét?
+              </button>
             </div>
+          )}
 
-            <button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-green-800 to-green-700 border border-yellow-600/50 text-yellow-400 font-black py-4 rounded-xl shadow-lg hover:from-green-700 hover:to-green-600 active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm"
-            >
-              Đăng nhập hệ thống <ChevronRight size={18} />
-            </button>
-          </form>
-
-          <div className="mt-10 text-center opacity-40 text-[8px] text-white uppercase tracking-widest">
-            Phát triển bởi Cục Tuyên huấn - TCCT
+          <div className="mt-8 flex flex-col items-center space-y-6">
+             <div className="flex items-center space-x-3 w-full opacity-30">
+               <div className="h-px bg-stone-400 flex-1" />
+               <div className="w-2 h-2 rounded-full bg-[#FFFF00]" />
+               <div className="h-px bg-stone-400 flex-1" />
+             </div>
+             <div className="text-center space-y-1">
+              <p className="text-[#2E4D23] font-black text-[9px] md:text-[10px] uppercase tracking-widest leading-none">Bản quyền © {new Date().getFullYear()}</p>
+              <p className="text-stone-400 text-[8px] font-bold uppercase tracking-tighter opacity-60">Tổng cục Chính trị Quân đội nhân dân Việt Nam</p>
+            </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(40px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-6px); }
+          75% { transform: translateX(6px); }
+        }
+        .animate-fadeInUp { animation: fadeInUp 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        .animate-shake { animation: shake 0.2s ease-in-out 2; }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };
