@@ -1,75 +1,82 @@
-import React from 'react';
-import { Home, History, ShieldCheck, BookOpen, LogOut, Gamepad2, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, History, Shield, Book, Music, Zap, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 
-interface SidebarProps {
-  onNavigate: (id: string) => void;
-  activeTab: string;
-  onLogout: () => void;
-  username: string;
-}
+const Sidebar = ({ onNavigate, activeTab, isOpen, setIsOpen }: any) => {
+  const [openSub, setOpenSub] = useState<string | null>(null);
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeTab, onLogout, username }) => {
-  // ID ở đây phải khớp chính xác với Case trong App.tsx
-  const menuItems = [
-    { id: 'dashboard', icon: <Home size={18} />, label: 'Trang chủ' },
-    { id: 'history-vn', icon: <History size={18} />, label: 'Lịch sử QĐND VN' },
-    { id: 'tradition', icon: <ShieldCheck size={18} />, label: 'Truyền thống đơn vị' },
-    { id: 'bai-giang', icon: <BookOpen size={18} />, label: 'Bài giảng chính trị' },
-    { id: 'game', icon: <Gamepad2 size={18} />, label: 'Góc giải trí' },
-    { id: 'wise-soldier', icon: <Settings size={18} />, label: 'Cài đặt hệ thống' },
+  const toggleSub = (id: string) => setOpenSub(openSub === id ? null : id);
+
+  const navAction = (id: string) => {
+    onNavigate(id);
+    if (window.innerWidth < 768) setIsOpen(false); // Đóng sidebar khi click trên di động
+  };
+
+  const menu = [
+    { id: 'dashboard', label: 'Trang chủ', icon: <Home size={18}/> },
+    { id: 'history-vn', label: 'Lịch sử QĐND VN', icon: <History size={18}/> },
+    { 
+      id: 'tradition', 
+      label: 'Truyền thống đơn vị', 
+      icon: <Shield size={18}/>,
+      subs: [
+        { id: 'tradition-thudo', label: 'LLVT Thủ đô' },
+        { id: 'tradition-301', label: 'Sư đoàn 301' },
+        { id: 'tradition-59', label: 'Trung đoàn 59' },
+        { id: 'tradition-692', label: 'Trung đoàn 692' },
+        { id: 'tradition-757', label: 'Trung đoàn 757' },
+      ]
+    },
+    { 
+      id: 'lectures', 
+      label: 'Bài giảng chính trị', 
+      icon: <Book size={18}/>,
+      subs: [
+        { id: 'lecture-newbie', label: 'Chiến sĩ mới (6 bài)' },
+        { id: 'lecture-hsq', label: 'HSQ-CS (12 bài)' },
+      ]
+    },
+    { 
+      id: 'entertainment', 
+      label: 'Góc giải trí', 
+      icon: <Music size={18}/>,
+      subs: [
+        { id: 'music-15', label: '15 bài hát quy định' },
+        { id: 'dance-5', label: '5 điệu vũ' },
+      ]
+    },
+    { id: 'wise-soldier', label: 'Chiến sĩ thông thái', icon: <Zap size={18}/> },
+    { id: 'settings', label: 'Cài đặt hệ thống', icon: <Settings size={18}/> },
   ];
 
   return (
-    <div className="w-72 h-screen bg-[#1a2e12] flex flex-col p-4 shadow-2xl shrink-0 border-r border-white/5">
-      {/* Header Sidebar */}
-      <div className="p-4 mb-6 border-b border-white/10">
-        <h1 className="text-yellow-500 font-black text-[17px] italic uppercase leading-tight tracking-tighter">
-          Bổ trợ học tập chính trị
-        </h1>
-        <p className="text-white/40 text-[10px] uppercase font-bold tracking-widest mt-1 italic">
-          Kỷ cương - Trách nhiệm - Quyết thắng
-        </p>
+    <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#1a2e12] text-white transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto`}>
+      <div className="p-6 border-b border-white/10 flex items-center gap-3">
+        <img src="/vpa-logo.png" className="w-10 h-10" alt="VPA" />
+        <span className="font-black text-xs uppercase tracking-tighter text-yellow-500">Học tập chính trị</span>
       </div>
-
-      {/* Navigation List */}
-      <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
-        {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all text-left group ${
-              activeTab === item.id 
-                ? 'bg-yellow-500 text-green-950 font-black shadow-lg shadow-yellow-500/10' 
-                : 'text-white/60 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <span className={`${activeTab === item.id ? 'text-green-950' : 'text-yellow-500/70 group-hover:text-yellow-500'}`}>
-              {item.icon}
-            </span>
-            <span className="text-[13px] font-bold uppercase tracking-tight">{item.label}</span>
-          </button>
+      <nav className="p-4 space-y-1">
+        {menu.map((item) => (
+          <div key={item.id}>
+            <button 
+              onClick={() => item.subs ? toggleSub(item.id) : navAction(item.id)}
+              className={`w-full flex items-center justify-between p-4 rounded-xl text-xs font-bold uppercase transition-all ${activeTab.includes(item.id) ? 'bg-yellow-500 text-green-950' : 'hover:bg-white/5 text-white/70'}`}
+            >
+              <div className="flex items-center gap-3">{item.icon} {item.label}</div>
+              {item.subs && (openSub === item.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>)}
+            </button>
+            {item.subs && openSub === item.id && (
+              <div className="ml-8 mt-1 space-y-1 border-l border-white/10">
+                {item.subs.map(sub => (
+                  <button key={sub.id} onClick={() => navAction(sub.id)} className="w-full text-left p-3 text-[10px] font-bold uppercase text-white/50 hover:text-yellow-500 transition-colors">
+                    • {sub.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
-
-      {/* User Info & Logout */}
-      <div className="mt-auto pt-4 border-t border-white/10">
-        <div className="flex items-center gap-3 p-3 bg-black/20 rounded-2xl mb-4 border border-white/5">
-          <div className="w-10 h-10 rounded-full bg-red-700 flex items-center justify-center text-white font-black shadow-inner border border-white/10">
-            {username.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-white font-bold text-sm truncate uppercase tracking-tighter">{username}</span>
-            <span className="text-white/30 text-[9px] uppercase font-bold">Quân nhân quản lý</span>
-          </div>
-        </div>
-        <button 
-          onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 py-3.5 text-red-400 hover:bg-red-500 hover:text-white rounded-xl text-[11px] font-black uppercase transition-all duration-300 border border-red-500/20 hover:border-red-500 shadow-sm"
-        >
-          <LogOut size={16} /> Đăng xuất hệ thống
-        </button>
-      </div>
-    </div>
+    </aside>
   );
 };
 
