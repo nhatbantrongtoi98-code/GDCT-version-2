@@ -1,73 +1,87 @@
-import React from 'react';
-import { Shield, Calendar, Award, MapPin } from 'lucide-react';
-import AdminEditPrompt from '../components/AdminEditPrompt';
-import { User } from '../types';
-import { INITIAL_DATA } from '../constants';
+import React, { useState } from 'react';
+import { Edit3, Save, Image as ImageIcon, Shield } from 'lucide-react';
 
-interface UnitTraditionViewProps {
-  user: User;
-  currentPage: string;
-}
+const UnitTraditionView = ({ isAdmin }: { isAdmin: boolean }) => {
+  const [activeUnit, setActiveUnit] = useState('sư301');
+  const [isEditing, setIsEditing] = useState(false);
+  const [units, setUnits] = useState<any>({
+    sư301: {
+      name: "Sư đoàn Bộ binh 301",
+      logo: "https://vpa.vn/logo-301.png",
+      cover: "https://vpa.vn/cover-301.jpg",
+      content: "Sư đoàn 301 là đơn vị chủ lực của LLVT Thủ đô...",
+    },
+    // ... Thêm các đơn vị khác ở đây
+  });
 
-const UnitTraditionView: React.FC<UnitTraditionViewProps> = ({ user, currentPage }) => {
-  // 1. Lấy unitId từ currentPage (ví dụ: 'unit-div301' -> 'div301')
-  const unitId = currentPage.replace('unit-', '');
-
-  // 2. Chuyển đổi Object tradition thành Array và tìm đơn vị tương ứng
-  // Trong constants.ts của bạn, dữ liệu nằm ở INITIAL_DATA.tradition
-  const unit = Object.values(INITIAL_DATA.tradition).find(u => u.id === unitId);
+  const current = units[activeUnit];
 
   return (
-    <div className="p-6 md:p-12 min-h-full bg-green-50/50 animate-fadeIn">
-      <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
-        <div className="bg-[#2E4D23] text-white p-8 md:p-12 rounded-t-[2rem] shadow-xl flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
-          <div className="bg-[#FFFF00] p-4 rounded-full text-[#2E4D23] shadow-inner">
-            <Shield size={64} />
+    <div className="flex flex-col md:flex-row gap-8 animate-fadeIn">
+      {/* CỘT TRÁI: DANH SÁCH ĐƠN VỊ */}
+      <div className="w-full md:w-80 space-y-3">
+        {Object.keys(units).map((key) => (
+          <button
+            key={key}
+            onClick={() => { setActiveUnit(key); setIsEditing(false); }}
+            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all border ${activeUnit === key ? 'bg-red-700 text-white border-red-700 shadow-lg' : 'bg-white text-slate-600 border-transparent hover:border-red-200'}`}
+          >
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1 shadow-sm border">
+              <img src={units[key].logo} alt="logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-black text-[11px] uppercase text-left leading-tight">{units[key].name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* CỘT PHẢI: CHI TIẾT NỘI DUNG */}
+      <div className="flex-1 bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-50 relative">
+        {isAdmin && (
+          <div className="absolute top-6 right-6 z-10">
+            <button 
+              onClick={() => isEditing ? setIsEditing(false) : setIsEditing(true)}
+              className={`p-4 rounded-full shadow-xl transition-all ${isEditing ? 'bg-green-600 text-white' : 'bg-slate-800/40 text-white backdrop-blur-md'}`}
+            >
+              {isEditing ? <Save size={20}/> : <Edit3 size={20}/>}
+            </button>
           </div>
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight">
-              {unit?.name || 'Không tìm thấy đơn vị'}
-            </h2>
-            <p className="opacity-70 mt-2 italic text-lg">Phát huy truyền thống - Cống hiến tài năng</p>
-          </div>
+        )}
+
+        {/* ẢNH MINH HỌA LỚN */}
+        <div className="h-72 md:h-96 bg-slate-200 relative group">
+          <img src={current.cover} className="w-full h-full object-cover" alt="Cover" />
+          {isEditing && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <button className="bg-white text-slate-800 px-6 py-2 rounded-xl font-black text-[10px] uppercase shadow-xl flex items-center gap-2">
+                <ImageIcon size={16}/> Thay ảnh minh họa
+              </button>
+            </div>
+          )}
         </div>
-        
-        {/* Content Section */}
-        <div className="bg-white p-8 md:p-12 rounded-b-[2rem] shadow-sm border-x border-b border-stone-200 space-y-10">
-          <section>
-            <h4 className="font-black text-xl text-[#2E4D23] flex items-center mb-4 uppercase tracking-wider">
-              <Calendar className="mr-3 text-[#DA251D]" size={24} /> Lịch sử hình thành
-            </h4>
-            <p className="text-stone-700 leading-relaxed text-base md:text-lg">
-              {/* Sửa unit.description thành unit.history để khớp với constants.ts */}
-              {unit?.history || 'Thông tin đang được cập nhật...'}
-            </p>
-          </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
-              <h4 className="font-black text-lg text-[#2E4D23] flex items-center mb-4 uppercase">
-                <Award className="mr-3 text-[#DA251D]" size={22} /> Thành tích
-              </h4>
-              <ul className="space-y-3 text-stone-600 font-medium">
-                <li className="flex items-start"><span className="text-[#DA251D] mr-2">•</span> Huân chương Quân công hạng Nhất</li>
-                <li className="flex items-start"><span className="text-[#DA251D] mr-2">•</span> Danh hiệu Anh hùng LLVT Nhân dân</li>
-                <li className="flex items-start"><span className="text-[#DA251D] mr-2">•</span> Nhiều năm liền nhận cờ thi đua Chính phủ</li>
-              </ul>
-            </section>
-
-            <section className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
-              <h4 className="font-black text-lg text-[#2E4D23] flex items-center mb-4 uppercase">
-                <MapPin className="mr-3 text-[#DA251D]" size={22} /> Địa bàn
-              </h4>
-              <p className="text-stone-600 italic">
-                Sẵn sàng chiến đấu và cơ động trên mọi địa hình, gắn bó máu thịt với nhân dân Thủ đô.
-              </p>
-            </section>
+        {/* PHẦN CHỮ */}
+        <div className="p-8 md:p-14">
+          <div className="flex items-center gap-6 mb-10 border-b pb-8 border-slate-100">
+             <div className="w-20 h-20 bg-slate-50 p-2 rounded-2xl border shadow-inner">
+                <img src={current.logo} className="w-full h-full object-contain" alt="Logo" />
+             </div>
+             <div>
+                <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter leading-none">{current.name}</h2>
+                <p className="text-red-700 font-bold text-[10px] uppercase tracking-[0.2em] mt-3 italic">Hệ thống dữ liệu truyền thống</p>
+             </div>
           </div>
-          
-          <AdminEditPrompt user={user} onEdit={() => alert(`Cập nhật truyền thống ${unit?.name}`)} />
+
+          {isEditing ? (
+            <textarea 
+              className="w-full h-96 p-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] outline-none font-medium leading-relaxed text-slate-700"
+              value={current.content}
+              onChange={(e) => setUnits({...units, [activeUnit]: {...current, content: e.target.value}})}
+            />
+          ) : (
+            <div className="text-slate-700 text-lg leading-[2.2] text-justify font-medium whitespace-pre-line">
+              {current.content}
+            </div>
+          )}
         </div>
       </div>
     </div>
