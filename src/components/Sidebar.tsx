@@ -1,75 +1,66 @@
-import React, { useState } from 'react';
-import { Home, History, Shield, Book, Music, Zap, Settings, LogOut, ChevronDown, ChevronUp, Menu } from 'lucide-react';
+import React from 'react';
+import { Home, History, Shield, Book, Music, Zap, Settings, LogOut } from 'lucide-react';
 
-const Sidebar = ({ onNavigate, activeTab, onLogout, username }: any) => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [openSub, setOpenSub] = useState<string | null>(null);
-
+const Sidebar = ({ onNavigate, activeTab, onLogout, username, role }: any) => {
   const menu = [
-    { id: 'dashboard', label: 'Trang chủ', icon: <Home size={19}/> },
-    { id: 'history-vn', label: 'Lịch sử QĐND VN', icon: <History size={19}/> },
-    { 
-      id: 'tradition', label: 'Lịch sử truyền thống đơn vị', icon: <Shield size={19}/>,
-      subs: [
-        { id: 'tradition-thudo', label: 'LLVT Thủ đô' },
-        { id: 'tradition-301', label: 'Sư đoàn Bộ binh 301' },
-        { id: 'tradition-59', label: 'Trung đoàn Bộ binh 59' },
-        { id: 'tradition-692', label: 'Trung đoàn Bộ binh 692' },
-        { id: 'tradition-757', label: 'Trung đoàn Bộ binh 757' },
-      ]
-    },
-    // ... Thêm các mục khác theo nhu cầu
+    { id: 'dashboard', label: 'Trang chủ', icon: <Home size={18}/> },
+    { id: 'history', label: 'Lịch sử Dân tộc Việt Nam', icon: <History size={18}/> },
+    { id: 'tradition', label: 'Lịch sử truyền thống đơn vị', icon: <Shield size={18}/> },
+    { id: 'lectures', label: 'Bài giảng chính trị', icon: <Book size={18}/> },
+    { id: 'entertainment', label: 'Góc Giải trí', icon: <Music size={18}/> },
+    { id: 'wise', label: 'Chiến sĩ thông thái', icon: <Zap size={18}/> },
+    { id: 'settings', label: 'Cài đặt', icon: <Settings size={18}/> },
   ];
 
   return (
-    <>
-      <button onClick={() => setIsMobileOpen(true)} className="lg:hidden fixed top-5 left-5 z-[60] bg-red-700 text-yellow-400 p-3 rounded-xl shadow-xl">
-        <Menu size={24} />
-      </button>
-
-      <aside className={`fixed inset-y-0 left-0 z-[55] w-72 bg-[#2d3a1a] border-r-4 border-yellow-600 transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 flex flex-col shadow-2xl`}>
-        <div className="p-8 border-b border-yellow-500/20 text-center bg-black/10">
-          <img src="/vpa-logo.png" className="w-16 h-16 mx-auto mb-2 drop-shadow-lg" alt="VPA" />
-          <h2 className="text-yellow-500 font-black text-[10px] uppercase tracking-widest leading-tight">QĐND VIỆT NAM</h2>
+    <aside className="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col p-6 z-50 font-['Be_Vietnam_Pro'] shadow-sm">
+      <div className="flex items-center gap-3 mb-10 px-2 animate-fadeIn">
+        <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100">
+          <img src="/vpa-logo.png" className="w-9 h-9" alt="logo" />
         </div>
+        <div>
+          <h1 className="text-[#922323] font-black text-sm uppercase leading-none tracking-tighter italic">Sổ tay GDCT</h1>
+          <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1">Học tập & Rèn luyện</p>
+        </div>
+      </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1 mt-4">
-          {menu.map((item) => (
-            <div key={item.id}>
-              <button 
-                onClick={() => item.subs ? setOpenSub(openSub === item.id ? null : item.id) : onNavigate(item.id)}
-                className={`w-full flex items-center justify-between p-3.5 rounded-xl text-[11px] font-black uppercase transition-all ${activeTab.includes(item.id) ? 'bg-red-700 text-yellow-400 shadow-lg' : 'text-white/60 hover:text-yellow-500'}`}
-              >
-                <div className="flex items-center gap-3">
-                    <span className={activeTab.includes(item.id) ? 'text-yellow-400' : 'text-yellow-600'}>{item.icon}</span>
-                    {item.label}
-                </div>
-                {item.subs && (openSub === item.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>)}
-              </button>
-              {item.subs && openSub === item.id && (
-                <div className="ml-8 mt-1 border-l-2 border-yellow-500/20 space-y-1">
-                  {item.subs.map(sub => (
-                    <button key={sub.id} onClick={() => onNavigate(sub.id)} className={`w-full text-left pl-5 py-2.5 text-[10px] font-bold uppercase transition-colors ${activeTab === sub.id ? 'text-yellow-400 italic font-black' : 'text-white/40 hover:text-yellow-500'}`}>
-                      • {sub.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
-
-        <div className="p-4 bg-black/20 border-t border-yellow-500/10">
-          <div className="flex items-center gap-3 mb-4 p-2 bg-white/5 rounded-xl border border-white/5">
-            <div className="w-9 h-9 rounded-full bg-red-700 flex items-center justify-center font-black text-yellow-400 border border-yellow-500/30 shadow-md">{username.charAt(0).toUpperCase()}</div>
-            <div className="flex flex-col"><span className="text-white text-[10px] font-bold uppercase truncate">{username}</span><span className="text-[8px] text-yellow-500/40 font-black uppercase tracking-tighter">Học viên tra cứu</span></div>
-          </div>
-          <button onClick={onLogout} className="w-full py-4 bg-red-700 hover:bg-red-800 text-yellow-400 rounded-xl font-black text-[10px] uppercase shadow-md flex items-center justify-center gap-2 transition-all">
-            <LogOut size={14} /> Đăng xuất
+      <nav className="flex-1 space-y-1.5">
+        {menu.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onNavigate(item.id)}
+            className={`w-full flex items-center gap-4 p-4 rounded-[1.25rem] font-black text-[10px] uppercase transition-all tracking-tight ${
+              activeTab.includes(item.id) 
+              ? 'bg-[#DA251D] text-white shadow-xl shadow-red-100' 
+              : 'text-slate-500 hover:bg-slate-50 hover:text-[#DA251D]'
+            }`}
+          >
+            <span className={activeTab.includes(item.id) ? 'text-white' : 'text-[#DA251D]'}>{item.icon}</span>
+            {item.label}
           </button>
+        ))}
+      </nav>
+
+      <div className="mt-auto pt-6 border-t border-slate-50">
+        <div className="flex items-center gap-3 mb-4 p-4 bg-[#1A2E14] rounded-3xl border border-white/10 shadow-lg">
+          <div className="w-10 h-10 rounded-2xl bg-[#DA251D] flex items-center justify-center text-white font-black text-sm shadow-inner">
+            {username.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex flex-col overflow-hidden">
+            <span className="font-black text-[10px] text-white uppercase tracking-tighter truncate">{username}</span>
+            <span className="text-[8px] text-[#FFFF00]/70 font-bold uppercase italic mt-0.5">
+              {role === 'admin' ? 'Sĩ quan quản lý' : 'Học viên tra cứu'}
+            </span>
+          </div>
         </div>
-      </aside>
-    </>
+        <button 
+          onClick={onLogout} 
+          className="w-full flex items-center justify-center gap-2 p-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-[10px] uppercase hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+        >
+          <LogOut size={16} /> Đăng xuất
+        </button>
+      </div>
+    </aside>
   );
 };
 
