@@ -45,7 +45,7 @@ const HomeView: React.FC<HomeViewProps> = ({ user }) => (
         <div className="absolute top-0 right-0 p-4 opacity-10"><Shield size={100} /></div>
         <h4 className="text-xl font-bold mb-4 text-[#FFFF00]">"Quân đội ta trung với Đảng, hiếu với dân"</h4>
         <p className="opacity-80 text-sm italic">
-          Xây dựng Quân đội nhân dân cách mạng, chính quy, tinh nhuệ, hiện đại.
+          Xây dựng Quân đội nhân dân cách mạng, chính quy, tinh nhuệ, từng bước hiện đại.
         </p>
       </div>
 
