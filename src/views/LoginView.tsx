@@ -1,113 +1,72 @@
-import React, { useState } from 'react';
-import { User, Lock, ChevronRight, AlertCircle, CheckCircle2, Circle } from 'lucide-react';
-import VpaLogo from '../components/VpaLogo'; 
+import React, { useState, useEffect } from 'react';
+import { QrCode, LogIn } from 'lucide-react';
 
-interface LoginProps {
-  onLogin: (username: string) => void;
-}
+const Login: React.FC = () => {
+  // Trạng thái lưu trữ ảnh nền lấy từ bộ nhớ
+  const [bgImage, setBgImage] = useState<string>("");
 
-const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false); // Trạng thái lưu mật khẩu
-  const [error, setError] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (username.trim() !== '' && password.trim() !== '') {
-      // Nếu rememberMe = true, bạn có thể xử lý lưu vào LocalStorage tại đây
-      onLogin(username);
-    } else {
-      setError('Đồng chí vui lòng nhập đầy đủ thông tin!');
+  useEffect(() => {
+    // ⚡ BƯỚC QUAN TRỌNG: Truy xuất ảnh nền mà Admin đã tải lên từ máy tính
+    const savedBg = localStorage.getItem('login_bg');
+    if (savedBg) {
+      setBgImage(savedBg);
     }
-  };
+  }, []);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden font-sans bg-[#0a1407]">
-      {/* Nền ảnh */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center"
-        style={{ 
-          backgroundImage: `url('https://vnanet.vn/Data/Articles/2024/05/07/7325607/vna_p_20240507090253_2961805.jpg')`,
-          filter: 'brightness(0.25) contrast(1.2)'
-        }}
-      />
-      
-      <div className="relative z-10 w-full max-w-[400px] p-8 bg-[#1a2e12]/90 backdrop-blur-xl rounded-[2.5rem] border border-green-800/50 shadow-2xl mx-4">
-        <div className="text-center mb-8">
-          <VpaLogo size={90} className="mx-auto" animate={true} />
-          <h2 className="text-white font-black uppercase tracking-tighter mt-4 text-xl">
-            Đăng nhập hệ thống
-          </h2>
+    <div 
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center transition-all duration-700"
+      style={{ 
+        // Nếu đã tải ảnh lên thì dùng ảnh đó, nếu chưa thì dùng ảnh mặc định (hoặc màu nền)
+        backgroundImage: bgImage ? `url(${bgImage})` : `url('https://your-default-image-url.jpg')`,
+        backgroundColor: '#f1f5f9' 
+      }}
+    >
+      {/* Lớp phủ mờ để các ô nhập liệu dễ nhìn hơn nếu ảnh nền quá sáng */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px] z-0"></div>
+
+      {/* Khung đăng nhập trung tâm */}
+      <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row max-w-4xl w-full relative z-10 animate-in zoom-in-95 duration-500">
+        
+        {/* Khối bên trái: Mã QR & Khẩu hiệu mới */}
+        <div className="md:w-1/2 bg-[#8B1C1C] p-12 flex flex-col items-center justify-center text-center text-white space-y-8">
+          <div className="bg-white p-4 rounded-3xl shadow-lg">
+            <QrCode size={160} className="text-[#8B1C1C]" />
+          </div>
+          <p className="text-[11px] font-black uppercase tracking-widest leading-relaxed px-4">
+            LỰC LƯỢNG VŨ TRANG THỦ ĐÔ HÀ NỘI<br/>
+            VƯƠN MÌNH TRONG KỶ NGUYÊN MỚI
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Tên đăng nhập */}
-          <div className="space-y-1">
-            <label className="text-[10px] text-yellow-500 uppercase font-bold ml-2">Tên định danh</label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500" size={18} />
-              <input 
-                className="w-full bg-black/40 border border-green-900 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-yellow-500 transition-all"
-                placeholder="Nhập tên..."
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-              />
-            </div>
+        {/* Khối bên phải: Form nhập liệu */}
+        <div className="md:w-1/2 p-12 flex flex-col justify-center space-y-8">
+          <h2 className="text-2xl font-black text-slate-800 uppercase italic tracking-tighter">ĐĂNG NHẬP</h2>
+          
+          <div className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="Tài khoản đăng nhập" 
+              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 ring-red-100" 
+            />
+            <input 
+              type="Password" 
+              placeholder="Mật mã" 
+              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 ring-red-100" 
+            />
           </div>
 
-          {/* Mật khẩu */}
-          <div className="space-y-1">
-            <label className="text-[10px] text-yellow-500 uppercase font-bold ml-2">Mật mã</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500" size={18} />
-              <input 
-                type="password"
-                className="w-full bg-black/40 border border-green-900 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-yellow-500 transition-all"
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Hàng Tiện ích: Lưu mật khẩu & Quên mật khẩu */}
-          <div className="flex items-center justify-between px-2 text-[11px]">
-            <button 
-              type="button"
-              onClick={() => setRememberMe(!rememberMe)}
-              className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-            >
-              {rememberMe ? (
-                <CheckCircle2 size={16} className="text-yellow-500" />
-              ) : (
-                <Circle size={16} />
-              )}
-              Lưu mật khẩu
-            </button>
-            
-            <button 
-              type="button"
-              onClick={() => alert('Đồng chí vui lòng liên hệ Admin đơn vị để cấp lại mật mã!')}
-              className="text-yellow-500/80 hover:text-yellow-500 font-bold underline underline-offset-4"
-            >
-              Quên mật mã?
-            </button>
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-red-400 text-xs font-bold animate-pulse bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-              <AlertCircle size={14} /> {error}
-            </div>
-          )}
-
-          <button className="w-full bg-gradient-to-r from-red-700 to-red-800 text-yellow-400 font-black py-4 rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 border-b-4 border-red-950">
-            Vào hệ thống <ChevronRight size={18} />
+          <button className="w-full bg-[#CC2020] text-white py-4 rounded-xl font-black text-[12px] uppercase shadow-lg hover:bg-red-800 transition-all flex items-center justify-center gap-2">
+            VÀO HỆ THỐNG <LogIn size={16} />
           </button>
-        </form>
+
+          <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+            CHƯA CÓ TÀI KHOẢN? ĐĂNG KÝ
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default LoginView;
+export default Login;
