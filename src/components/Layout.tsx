@@ -1,202 +1,195 @@
-
 import React, { useState } from 'react';
-import { Menu, X, Home, History, Shield, BookOpen, Music, Zap, Settings, LogOut, ChevronRight, ChevronDown, User as UserIcon } from 'lucide-react';
-import VpaLogo from './VpaLogo';
-import { User } from '../types';
-import { UNIT_TRADITIONS } from '../constants';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Home, History, Shield, Monitor, Gamepad2, 
+  Music, Settings, LogOut, ChevronRight, Menu, X 
+} from 'lucide-react';
+import { UserAccount, BackgroundMusic } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
-  user: User;
+  currentUser: UserAccount;
+  appName: string;
+  appLogo: string;
+  playlist: BackgroundMusic[];
   onLogout: () => void;
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentPage, setCurrentPage }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentUser, appName, appLogo, onLogout }) => {
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    'unit-tradition': true, // Mặc định mở các mục quan trọng
-    'lectures': true
-  });
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  
-  const toggleExpand = (id: string) => {
-    setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const navigateTo = (path: string) => {
-    setCurrentPage(path);
-    if (window.innerWidth < 1024) {
-      setIsSidebarOpen(false);
-    }
-  };
-
-  const navItems = [
-    { id: 'home', label: 'Trang chủ', icon: Home },
-    { id: 'vpa-history', label: 'Lịch sử QĐND VN', icon: History },
-    { 
-      id: 'unit-tradition', 
-      label: 'Truyền thống đơn vị', 
-      icon: Shield,
-      children: UNIT_TRADITIONS.map(u => ({ id: `unit-${u.id}`, label: u.name }))
-    },
-    { 
-      id: 'lectures', 
-      label: 'Bài giảng chính trị', 
-      icon: BookOpen,
-      children: [
-        { id: 'lectures-csm', label: 'Chiến sĩ mới (6 bài)' },
-        { id: 'lectures-hsq', label: 'HSQ-CS (12 bài)' },
-      ]
-    },
-    { 
-      id: 'entertainment', 
-      label: 'Góc giải trí', 
-      icon: Music,
-      children: [
-        { id: 'songs', label: '15 Bài hát quy định' },
-        { id: 'dances', label: '5 Điệu vũ quân đội' },
-      ]
-    },
-    { id: 'wise-soldier', label: 'Chiến sĩ thông thái', icon: Zap },
-    { 
-      id: 'settings', 
-      label: 'Cài đặt hệ thống', 
-      icon: Settings,
-      children: [
-        { id: 'settings-ui', label: 'Chỉnh sửa giao diện' },
-        { id: 'settings-pass', label: 'Cập nhật mật khẩu' },
-        { id: 'settings-user', label: 'Thay đổi tên người dùng' },
-      ]
-    },
+  const menuItems = [
+    { path: '/', label: 'Trang chủ', icon: Home },
+    { path: '/history', label: 'Lịch sử Dân tộc', icon: History },
+    { path: '/tradition', label: 'Truyền thống đơn vị', icon: Shield },
+    { path: '/lectures', label: 'Bài giảng chính trị', icon: Monitor },
+    { path: '/entertainment', label: 'Góc Giải trí', icon: Music },
+    { path: '/game', label: 'Chiến sĩ thông thái', icon: Gamepad2 },
+    { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
+  const closeSidebar = () => setIsSidebarOpen(false);
+
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-stone-100 font-['Be_Vietnam_Pro']">
-      {/* Sidebar Overlay for Mobile */}
+    <div className="flex min-h-screen relative bg-[#f4f7fa] overflow-x-hidden font-sans">
+      
+      {/* 1. HEADER MOBILE: Đỏ chính quy, bóng mờ hiện đại */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#c41e16] text-white flex items-center justify-between px-4 z-[60] shadow-md">
+        <button onClick={() => setIsSidebarOpen(true)} className="p-2 active:scale-90 transition-all">
+          <Menu size={28} />
+        </button>
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-[0.2em] leading-none mb-1 text-center">Sổ tay huấn luyện</span>
+          <h1 className="text-[14px] font-black uppercase tracking-tight truncate max-w-[180px] text-center">
+            {appName}
+          </h1>
+        </div>
+        <div className="w-10 h-10 rounded-full border-2 border-yellow-400 overflow-hidden bg-white shadow-sm shrink-0">
+          <img src={currentUser.avatarUrl || ''} alt="avatar" className="w-full h-full object-cover" />
+        </div>
+      </header>
+
+      {/* 2. OVERLAY */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity" 
-          onClick={toggleSidebar}
-        />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] lg:hidden animate-fade-in" onClick={closeSidebar} />
       )}
 
-      {/* Sidebar */}
-      <aside 
-        className={`fixed lg:static inset-y-0 left-0 w-72 md:w-80 bg-[#1A2E14] text-white z-50 transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col shadow-2xl`}
-      >
-        <div className="p-6 md:p-8 flex flex-col items-center border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-          <VpaLogo size={90} animate />
-          <h1 className="mt-4 font-black text-center text-lg md:text-xl leading-tight text-[#FFFF00] uppercase tracking-tighter">
-            Học tập Chính trị
-          </h1>
-          <div className="mt-2 text-[10px] opacity-60 uppercase font-bold tracking-[0.2em] text-white">QĐND Việt Nam</div>
+      {/* 3. SIDEBAR: Giữ nguyên bố cục Desktop (w-72) */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-[80] w-72 bg-[#1e293b] flex flex-col shadow-2xl transition-transform duration-300 ease-out
+        lg:sticky lg:h-screen lg:translate-x-0 lg:shadow-none
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <button onClick={closeSidebar} className="lg:hidden absolute top-5 right-5 text-slate-400">
+          <X size={24} />
+        </button>
+
+        {/* Logo App trên Sidebar */}
+        <div className="p-8 pb-6 flex flex-col items-center lg:items-start border-b border-slate-700/30 mb-2">
+          <div className="w-20 h-20 bg-white rounded-2xl p-3 shadow-xl border-b-4 border-red-600 mb-4 flex items-center justify-center shrink-0">
+            {appLogo ? (
+               <img src={appLogo} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+               <span className="text-4xl">🎖️</span>
+            )}
+          </div>
+          <div className="text-center lg:text-left">
+            <span className="text-[10px] font-bold text-red-500 uppercase tracking-[0.3em]">Hệ thống điện tử</span>
+            <h1 className="text-xl font-black text-white uppercase tracking-tighter leading-tight mt-1">
+              {appName}
+            </h1>
+          </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
-          {navItems.map((item) => (
-            <div key={item.id} className="space-y-1">
-              <button
-                onClick={() => {
-                  if (item.children) {
-                    toggleExpand(item.id);
-                  } else {
-                    navigateTo(item.id);
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all ${
-                  currentPage === item.id 
-                    ? 'bg-[#DA251D] text-white shadow-lg shadow-[#DA251D]/20' 
-                    : 'hover:bg-white/10 text-stone-300'
+        {/* Menu điều hướng */}
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar pt-4">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={closeSidebar}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-900/50' 
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <item.icon size={20} className={currentPage === item.id ? 'text-white' : 'text-[#FFFF00]'} />
-                  <span className={`font-bold text-sm ${currentPage === item.id ? 'text-white' : ''}`}>{item.label}</span>
-                </div>
-                {item.children && (
-                  <div className={`transition-transform duration-300 ${expandedItems[item.id] ? 'rotate-180' : ''}`}>
-                    <ChevronDown size={16} className="opacity-50" />
-                  </div>
-                )}
-              </button>
-              
-              {item.children && expandedItems[item.id] && (
-                <div className="ml-6 space-y-1 border-l-2 border-white/5 pl-4 mt-1 mb-2 animate-fadeInSide">
-                  {item.children.map(child => (
-                    <button
-                      key={child.id}
-                      onClick={() => navigateTo(child.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm transition-all ${
-                        currentPage === child.id 
-                          ? 'bg-[#FFFF00]/20 text-[#FFFF00] font-bold' 
-                          : 'text-stone-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {child.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                <Icon size={20} className={isActive ? 'text-yellow-400' : 'text-slate-500'} />
+                <span className="text-[14px] uppercase tracking-wide">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-4 md:p-6 border-t border-white/10 bg-black/30">
-          <div className="flex items-center space-x-3 mb-4 bg-white/5 p-3 rounded-2xl">
-            <div className="bg-[#DA251D] p-2.5 rounded-xl shadow-lg">
-              <UserIcon size={18} className="text-white" />
+        {/* Footer User */}
+        <div className="m-4 p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+          <div className="flex items-center gap-3 mb-4 text-left">
+            <div className="w-10 h-10 rounded-lg border border-red-500 overflow-hidden shrink-0 bg-white">
+              <img src={currentUser.avatarUrl || ''} alt="avatar" className="w-full h-full object-cover" />
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-black truncate text-white uppercase tracking-tight">{user.username}</p>
-              <p className="text-[10px] opacity-50 capitalize font-bold text-[#FFFF00]">{user.role}</p>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[13px] font-bold text-white truncate">{currentUser.username}</span>
+              <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">{currentUser.role}</span>
             </div>
           </div>
-          <button 
-            onClick={onLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl transition-all font-bold text-sm border border-red-600/20 active:scale-95"
-          >
-            <LogOut size={18} />
-            <span>ĐĂNG XUẤT</span>
+          <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl border border-red-600/20 transition-all text-[12px] font-black uppercase">
+            <LogOut size={16} /> Đăng xuất
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-h-0 relative z-10">
-        {/* Top Header for Mobile */}
-        <header className="lg:hidden h-16 bg-[#2E4D23] flex items-center justify-between px-4 text-white shadow-xl sticky top-0 z-30 border-b border-white/10">
-          <button onClick={toggleSidebar} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
-            <Menu size={24} />
-          </button>
-          <div className="flex items-center space-x-2">
-            <VpaLogo size={36} />
-            <div className="flex flex-col">
-              <span className="font-black text-xs text-[#FFFF00] uppercase tracking-widest leading-none">QĐND VIỆT NAM</span>
-              <span className="text-[8px] opacity-70 uppercase font-bold tracking-tighter">Học tập Chính trị</span>
-            </div>
-          </div>
-          <div className="w-10"></div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-stone-50">
+      {/* 4. MAIN CONTENT: Vùng hiển thị nội dung bài học */}
+      <main className="flex-1 p-4 lg:p-10 pt-20 lg:pt-10 overflow-y-auto">
+        <div className="max-w-4xl mx-auto military-ux-container">
           {children}
         </div>
       </main>
 
+      {/* CSS TỐI ƯU THẨM MỸ: ĐẶC TRỊ LOGO & CHỮ TRÊN MOBILE */}
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        @keyframes fadeInSide {
-          from { opacity: 0; transform: translateX(-10px); }
-          to { opacity: 1; transform: translateX(0); }
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;900&display=swap');
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+
+        @media (max-width: 768px) {
+          /* LOGO ĐƠN VỊ: Điều chỉnh về 80px, hiển thị đầy đủ hình ảnh */
+          .military-ux-container img:not([alt="avatar"]), 
+          .military-ux-container .shrink-0 img {
+            width: 80px !important; 
+            height: 80px !important;
+            min-width: 80px !important;
+            margin: 0 auto 15px auto !important;
+            display: block !important;
+            border-radius: 16px !important;
+            object-fit: contain !important; /* Không bao giờ mất chi tiết logo */
+            background: #ffffff !important;
+            padding: 8px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+          }
+
+          /* TIÊU ĐỀ: Gọn gàng, màu đỏ sậm chính quy */
+          .military-ux-container h1, 
+          .military-ux-container h2, 
+          .military-ux-container b, 
+          .military-ux-container strong {
+            font-size: 1.15rem !important;
+            font-weight: 800 !important;
+            line-height: 1.4 !important;
+            color: #b91c1c !important;
+            text-align: center !important;
+            display: block !important;
+            margin-bottom: 0.8rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: -0.01em !important;
+          }
+
+          /* ĐOẠN VĂN: Bo góc mịn, đổ bóng nhẹ */
+          .military-ux-container p {
+            font-size: 14.5px !important;
+            line-height: 1.6 !important;
+            color: #334155 !important;
+            background: white !important;
+            padding: 18px !important;
+            border-radius: 20px !important;
+            margin-bottom: 12px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+            text-align: justify !important;
+          }
+
+          /* CÁC THẺ CARD TRONG NỘI DUNG */
+          .military-ux-container div[class*="bg-white"] {
+            border-radius: 20px !important;
+            padding: 16px !important;
+            border: 1px solid #f1f5f9 !important;
+          }
         }
-        .animate-fadeInSide { animation: fadeInSide 0.3s ease-out forwards; }
       `}</style>
     </div>
   );
