@@ -1,6 +1,6 @@
-import { AppData, TraditionUnit } from './types';
 
-// 1. ĐỊNH NGHĨA DỮ LIỆU GỐC TRƯỚC
+import { AppData } from './types';
+
 export const INITIAL_DATA: AppData = {
   appName: 'Sổ tay Giáo dục Chính trị Điện tử',
   appLogo: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Coat_of_arms_of_the_People%27s_Army_of_Vietnam.svg',
@@ -112,14 +112,3 @@ export const INITIAL_DATA: AppData = {
     { title: "Bác đang cùng chúng cháu hành quân", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }
   ]
 };
-
-// 2. EXPORT CÁC BIẾN PHỤ ĐỂ CÁC FILE CŨ KHÔNG BỊ LỖI
-export const COLORS = {
-  primary: '#2E4D23',
-  secondary: '#DA251D',
-  accent: '#FFFF00',
-};
-
-export const SONGS = INITIAL_DATA.entertainment.songs;
-export const DANCES = INITIAL_DATA.entertainment.dances;
-export const UNIT_TRADITIONS: TraditionUnit[] = Object.values(INITIAL_DATA.tradition);
