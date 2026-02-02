@@ -1,66 +1,153 @@
-import React from 'react';
-import { Home, History, Shield, Book, Music, Zap, Settings, LogOut } from 'lucide-react';
 
-const Sidebar = ({ onNavigate, activeTab, onLogout, username, role }: any) => {
-  const menu = [
-    { id: 'dashboard', label: 'Trang chủ', icon: <Home size={18}/> },
-    { id: 'history', label: 'Lịch sử Dân tộc Việt Nam', icon: <History size={18}/> },
-    { id: 'tradition', label: 'Lịch sử truyền thống đơn vị', icon: <Shield size={18}/> },
-    { id: 'lectures', label: 'Bài giảng chính trị', icon: <Book size={18}/> },
-    { id: 'entertainment', label: 'Góc Giải trí', icon: <Music size={18}/> },
-    { id: 'wise', label: 'Chiến sĩ thông thái', icon: <Zap size={18}/> },
-    { id: 'settings', label: 'Cài đặt', icon: <Settings size={18}/> },
-  ];
+import React, { useState } from 'react';
+import { PageId, SubPageId, User } from '../types';
+import { COLORS } from '../constants';
+
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  onNavigate: (page: PageId, subPage?: SubPageId) => void;
+  currentUser: User | null;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, onNavigate, currentUser }) => {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpanded(expanded === id ? null : id);
+  };
+
+  const navItemClass = "flex items-center px-4 py-3 text-sm sm:text-base font-medium transition-colors hover:bg-green-800 cursor-pointer border-b border-green-900/50";
+
+  const handleLinkClick = (page: PageId, subPage?: SubPageId) => {
+    onNavigate(page, subPage);
+    setIsOpen(false);
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col p-6 z-50 font-['Be_Vietnam_Pro'] shadow-sm">
-      <div className="flex items-center gap-3 mb-10 px-2 animate-fadeIn">
-        <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100">
-          <img src="/vpa-logo.png" className="w-9 h-9" alt="logo" />
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+        onClick={() => setIsOpen(false)}
+      ></div>
+      
+      {/* Sidebar Content */}
+      <div 
+        className="fixed inset-y-0 left-0 w-72 sm:w-80 bg-[#1b3a1a] text-white z-50 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out"
+        style={{ borderRight: `4px solid ${COLORS.vpaGold}` }}
+      >
+        <div className="p-6 flex flex-col items-center bg-green-950 border-b border-green-900">
+          <div className="w-16 h-16 mb-2">
+            <div className="w-full h-full scale-125">
+              {/* Simple version of logo for sidebar */}
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="#da251d" stroke="#ffde00" strokeWidth="2"/>
+                <polygon points="50,20 58,40 80,40 62,53 69,75 50,62 31,75 38,53 20,40 42,40" fill="#ffde00"/>
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-yellow-400 font-bold text-center leading-tight">HỆ THỐNG BỔ TRỢ<br/>HỌC TẬP CHÍNH TRỊ</h2>
+          {currentUser && (
+             <div className="mt-4 px-3 py-1 bg-green-900/50 rounded-full text-xs text-green-200">
+                {currentUser.role === 'ADMIN' ? '⚓ QUẢN TRỊ VIÊN' : '🎖️ NGƯỜI DÙNG'}
+             </div>
+          )}
         </div>
-        <div>
-          <h1 className="text-[#922323] font-black text-sm uppercase leading-none tracking-tighter italic">Sổ tay GDCT</h1>
-          <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1">Học tập & Rèn luyện</p>
+
+        <nav className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+          <div className={navItemClass} onClick={() => handleLinkClick('home')}>
+            🏠 Trang chủ
+          </div>
+
+          <div className={navItemClass} onClick={() => handleLinkClick('history_vpa')}>
+            📜 Lịch sử QĐND Việt Nam
+          </div>
+
+          {/* Unit Tradition */}
+          <div className="border-b border-green-900/50">
+            <div 
+              className="flex items-center justify-between px-4 py-3 text-sm sm:text-base font-medium hover:bg-green-800 cursor-pointer"
+              onClick={() => toggleExpand('tradition')}
+            >
+              <span>🚩 Truyền thống đơn vị</span>
+              <span className="text-xs">{expanded === 'tradition' ? '▼' : '▶'}</span>
+            </div>
+            {expanded === 'tradition' && (
+              <div className="bg-green-950/50 text-sm">
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('tradition_unit', 'llvt_thudo')}>• LLVT Thủ đô</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('tradition_unit', 'f301')}>• Sư đoàn BB 301</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('tradition_unit', 'e59')}>• Trung đoàn BB 59</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('tradition_unit', 'e692')}>• Trung đoàn BB 692</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('tradition_unit', 'e757')}>• Trung đoàn BB 757</div>
+              </div>
+            )}
+          </div>
+
+          {/* Lectures */}
+          <div className="border-b border-green-900/50">
+            <div 
+              className="flex items-center justify-between px-4 py-3 text-sm sm:text-base font-medium hover:bg-green-800 cursor-pointer"
+              onClick={() => toggleExpand('lectures')}
+            >
+              <span>📚 Bài giảng chính trị</span>
+              <span className="text-xs">{expanded === 'lectures' ? '▼' : '▶'}</span>
+            </div>
+            {expanded === 'lectures' && (
+              <div className="bg-green-950/50 text-sm">
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('lectures', 'new_soldier')}>• Chiến sĩ mới (6 bài)</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('lectures', 'hsq_cs')}>• HSQ-CS (12 bài)</div>
+              </div>
+            )}
+          </div>
+
+          {/* Entertainment */}
+          <div className="border-b border-green-900/50">
+            <div 
+              className="flex items-center justify-between px-4 py-3 text-sm sm:text-base font-medium hover:bg-green-800 cursor-pointer"
+              onClick={() => toggleExpand('ent')}
+            >
+              <span>🎸 Góc giải trí</span>
+              <span className="text-xs">{expanded === 'ent' ? '▼' : '▶'}</span>
+            </div>
+            {expanded === 'ent' && (
+              <div className="bg-green-950/50 text-sm">
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('entertainment', 'songs')}>• 15 Bài hát quy định</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('entertainment', 'dances')}>• 5 Điệu vũ</div>
+              </div>
+            )}
+          </div>
+
+          <div className={navItemClass} onClick={() => handleLinkClick('wise_soldier')}>
+            💡 Chiến sĩ thông thái
+          </div>
+
+          {/* Settings */}
+          <div className="border-b border-green-900/50">
+            <div 
+              className="flex items-center justify-between px-4 py-3 text-sm sm:text-base font-medium hover:bg-green-800 cursor-pointer"
+              onClick={() => toggleExpand('settings')}
+            >
+              <span>⚙️ Cài đặt hệ thống</span>
+              <span className="text-xs">{expanded === 'settings' ? '▼' : '▶'}</span>
+            </div>
+            {expanded === 'settings' && (
+              <div className="bg-green-950/50 text-sm">
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('settings', 'ui_config')}>• Chỉnh sửa giao diện</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('settings', 'password_update')}>• Cập nhật mật khẩu</div>
+                <div className="px-8 py-2 hover:text-yellow-400 cursor-pointer" onClick={() => handleLinkClick('settings', 'username_change')}>• Thay đổi tên người dùng</div>
+              </div>
+            )}
+          </div>
+        </nav>
+
+        <div className="p-4 bg-red-900/40 text-center text-xs text-white/70 italic border-t border-red-900">
+           Bản quyền thuộc Cục Chính trị - BTL Thủ đô Hà Nội
         </div>
       </div>
-
-      <nav className="flex-1 space-y-1.5">
-        {menu.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`w-full flex items-center gap-4 p-4 rounded-[1.25rem] font-black text-[10px] uppercase transition-all tracking-tight ${
-              activeTab.includes(item.id) 
-              ? 'bg-[#DA251D] text-white shadow-xl shadow-red-100' 
-              : 'text-slate-500 hover:bg-slate-50 hover:text-[#DA251D]'
-            }`}
-          >
-            <span className={activeTab.includes(item.id) ? 'text-white' : 'text-[#DA251D]'}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </nav>
-
-      <div className="mt-auto pt-6 border-t border-slate-50">
-        <div className="flex items-center gap-3 mb-4 p-4 bg-[#1A2E14] rounded-3xl border border-white/10 shadow-lg">
-          <div className="w-10 h-10 rounded-2xl bg-[#DA251D] flex items-center justify-center text-white font-black text-sm shadow-inner">
-            {username.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="font-black text-[10px] text-white uppercase tracking-tighter truncate">{username}</span>
-            <span className="text-[8px] text-[#FFFF00]/70 font-bold uppercase italic mt-0.5">
-              {role === 'admin' ? 'Sĩ quan quản lý' : 'Học viên tra cứu'}
-            </span>
-          </div>
-        </div>
-        <button 
-          onClick={onLogout} 
-          className="w-full flex items-center justify-center gap-2 p-4 bg-slate-50 text-slate-400 rounded-2xl font-black text-[10px] uppercase hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
-        >
-          <LogOut size={16} /> Đăng xuất
-        </button>
-      </div>
-    </aside>
+    </>
   );
 };
 
