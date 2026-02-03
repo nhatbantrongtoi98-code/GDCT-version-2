@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 // CHÚ Ý: Phải import db và auth từ file cấu hình firebase của đồng chí
 // Nếu file cấu hình tên là firebase.ts thì để nguyên. Nếu tên khác thì sửa lại tên file.
-import { db, auth } from "./firebase"; 
+import { db, auth } from "../firebase"; 
 
 const SettingsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
