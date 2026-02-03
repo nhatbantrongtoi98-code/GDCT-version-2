@@ -1,11 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Camera, Save, Loader2, Image as ImageIcon, ShieldCheck } from 'lucide-react';
-import { ref, update, onValue } from "firebase/database";
-import { onAuthStateChanged } from "firebase/auth";
+// DÙNG THƯ VIỆN GỐC
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, update, onValue } from "firebase/database";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-// CHÚ Ý: Phải import db và auth từ file cấu hình firebase của đồng chí
-// Nếu file cấu hình tên là firebase.ts thì để nguyên. Nếu tên khác thì sửa lại tên file.
-import { db, auth } from "firebase-config"; 
+// DÁN CẤU HÌNH TRỰC TIẾP TẠI ĐÂY (KHÔNG IMPORT FILE NGOÀI NỮA)
+const firebaseConfig = {
+  apiKey: "AIzaSyA_E7R1Pgbb3PxdJ4iw_iFWxE1VHYCnU8U",
+  authDomain: "gdct-9b57d.firebaseapp.com",
+  databaseURL: "https://gdct-9b57d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "gdct-9b57d",
+  storageBucket: "gdct-9b57d.firebasestorage.app",
+  messagingSenderId: "818099040678",
+  appId: "1:818099040678:web:dd8601e6250c96ec415f67",
+  measurementId: "G-9MSSR1LKNT"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
 
 const SettingsView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
