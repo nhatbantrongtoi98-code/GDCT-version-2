@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
-import { MainContentView } from './views/MainContentView';
+// SỬA DÒNG NÀY: Bỏ dấu ngoặc nhọn để hết lỗi build
+import MainContentView from './views/MainContentView'; 
 import { Menu } from 'lucide-react';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [subPage, setSubPage] = useState<string | undefined>(undefined);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Mở sẵn trên máy tính
-  const [user] = useState({ username: 'chiensi123', role: 'user' });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Dữ liệu giả định người dùng, role admin sẽ hiện nút sửa
+  const [user] = useState({ username: 'chiensi123', role: 'admin' });
 
   const handleNavigate = (page: string, sub?: string) => {
     setActiveTab(page);
     setSubPage(sub);
+    // Tự động đóng sidebar trên mobile khi chọn menu
+    if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
 
   return (
@@ -26,7 +31,7 @@ const App = () => {
         </button>
       )}
 
-      {/* Sidebar - Đã thêm logic isOpen */}
+      {/* Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
@@ -36,10 +41,14 @@ const App = () => {
         onLogout={() => {}}
       />
 
-      {/* Nội dung chính - Tự động dãn khoảng cách khi ẩn/hiện Sidebar */}
+      {/* Nội dung chính */}
       <main className={`flex-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'lg:ml-80' : 'ml-0'}`}>
         <div className="p-4 md:p-8 pt-20 lg:pt-8">
-          <MainContentView page={activeTab as any} subPage={subPage as any} user={user as any} />
+          {/* Truyền đúng props vào MainContentView */}
+          <MainContentView 
+            activeTab={activeTab} 
+            isAdmin={user.role === 'admin'} 
+          />
         </div>
       </main>
     </div>
