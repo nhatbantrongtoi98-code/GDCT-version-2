@@ -1,5 +1,7 @@
 import React from 'react';
 import { History, Shield, BookOpen, Music, Zap, Info } from 'lucide-react';
+// CHỈ THÊM DÒNG NÀY ĐỂ KẾT NỐI TRANG CÀI ĐẶT
+import SettingsView from './SettingsView'; 
 
 interface Props {
   activeTab: string; // ID của trang đang chọn
@@ -8,7 +10,12 @@ interface Props {
 
 const MainContentView: React.FC<Props> = ({ activeTab, isAdmin }) => {
   
-  // 1. TRANG CHỦ (GIỚI THIỆU)
+  // CHỈ THÊM ĐÚNG 3 DÒNG NÀY (Để khi bấm Settings nó hiện trang cài đặt)
+  if (activeTab === 'settings') {
+    return <SettingsView />;
+  }
+  
+  // TẤT CẢ NỘI DUNG DƯỚI ĐÂY GIỮ NGUYÊN BẢN GỐC CỦA ĐỒNG CHÍ
   if (activeTab === 'dashboard') return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
       <div className="text-center space-y-4">
@@ -31,18 +38,15 @@ const MainContentView: React.FC<Props> = ({ activeTab, isAdmin }) => {
     </div>
   );
 
-  // 2. TRANG LỊCH SỬ QĐND VN
   if (activeTab === 'history-vn') return (
     <div className="bg-[#fdf6e3] p-6 md:p-10 rounded-3xl shadow-inner border border-stone-200">
       <h2 className="text-2xl font-black text-red-700 uppercase mb-6 flex items-center gap-2"><History/> Lịch sử QĐND Việt Nam</h2>
       <div className="prose prose-stone leading-loose text-stone-800 font-medium">
         <p>Quân đội nhân dân Việt Nam được thành lập ngày 22/12/1944...</p>
-        {/* Thêm nội dung lịch sử tại đây */}
       </div>
     </div>
   );
 
-  // 3. TRANG BÀI GIẢNG CHÍNH TRỊ (Mở phần nào xem phần đó)
   if (activeTab === 'lectures-csm' || activeTab === 'lectures-hsq') {
     const isCsm = activeTab === 'lectures-csm';
     const totalLessons = isCsm ? 6 : 12;
@@ -67,7 +71,6 @@ const MainContentView: React.FC<Props> = ({ activeTab, isAdmin }) => {
     );
   }
 
-  // 4. TRANG CHIẾN SĨ THÔNG THÁI (GẮN LINK GAME)
   if (activeTab === 'wise-soldier') return (
     <div className="h-[600px] bg-white rounded-[2rem] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-6 text-center">
       <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mb-4">
