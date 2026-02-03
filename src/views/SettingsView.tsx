@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Camera, Save, Loader2, Image as ImageIcon, ShieldCheck } from 'lucide-react';
-import { getDatabase, ref, update, onValue } from "firebase/database";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { ref, update, onValue } from "firebase/database";
+import { onAuthStateChanged } from "firebase/auth";
+
+// CHÚ Ý: Phải import db và auth từ file cấu hình firebase của đồng chí
+// Nếu file cấu hình tên là firebase.ts thì để nguyên. Nếu tên khác thì sửa lại tên file.
+import { db, auth } from "./firebase"; 
 
 const SettingsView: React.FC = () => {
-  const auth = getAuth();
-  const db = getDatabase();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
@@ -15,7 +17,7 @@ const SettingsView: React.FC = () => {
   const [previewWallpaper, setPreviewWallpaper] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 1. CƠ CHẾ LẮNG NGHE REALTIME: Đảm bảo dữ liệu luôn đồng bộ
+  // 1. CƠ CHẾ LẮNG NGHE REALTIME
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -29,7 +31,6 @@ const SettingsView: React.FC = () => {
               avatarUrl: data.avatarUrl || "",
               wallpaperUrl: data.wallpaperUrl || ""
             });
-            // Chỉ cập nhật input khi người dùng không đang gõ
             if (!isUpdating) setNewName(data.fullName || "");
           } else {
             setUserData(prev => ({ ...prev, fullName: "QUÂN NHÂN", uid: user.uid }));
@@ -38,38 +39,47 @@ const SettingsView: React.FC = () => {
       }
     });
     return () => unsubscribe();
-  }, [auth, db, isUpdating]);
+  }, [isUpdating]);
 
-  // 2. HÀM LƯU CHUẨN: Đã gộp và sửa lỗi khai báo hàm
-  // Thay thế toàn bộ hàm handleSaveVinhVien cũ bằng đoạn này
-const handleSaveVinhVien = async () => {
-  if (!auth.currentUser || !newName.trim()) return;
-  setIsUpdating(true);
-
-  try {
-    const userRef = ref(db, `users/${auth.currentUser.uid}`);
+  // 2. HÀM LƯU VĨNH VIỄN - ĐÃ FIX LỖI KẾT NỐI
+  const handleSaveVinhVien = async () => {
+    if (!auth.currentUser) {
+      alert("❌ LỖI: Bạn chưa đăng nhập hoặc phiên làm việc hết hạn!");
+      return;
+    }
     
-    const updates = {
-      fullName: newName.trim().toUpperCase(),
-      avatarUrl: previewImage || userData.avatarUrl || "",
-      wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
-      lastModified: Date.now() 
-    };
+    if (!newName.trim()) {
+      alert("❌ LỖI: Vui lòng nhập họ và tên!");
+      return;
+    }
 
-    // Lệnh này phải thành công thì mới lưu vĩnh viễn được
-    await update(userRef, updates);
-    
-    alert("✅ ĐÃ LƯU VĨNH VIỄN THÀNH CÔNG!");
-    setPreviewImage(null);
-    setPreviewWallpaper(null);
-  } catch (error) {
-    // Nếu nó nhảy vào đây, đồng chí sẽ biết ngay là do Rules bị khóa
-    console.error("Lỗi Firebase:", error);
-    alert("❌ CHƯA LƯU ĐƯỢC: Server từ chối lệnh ghi này!");
-  } finally {
-    setIsUpdating(false);
-  }
-};
+    setIsUpdating(true);
+
+    try {
+      const userRef = ref(db, `users/${auth.currentUser.uid}`);
+      
+      const updates = {
+        fullName: newName.trim().toUpperCase(),
+        avatarUrl: previewImage || userData.avatarUrl || "",
+        wallpaperUrl: previewWallpaper || userData.wallpaperUrl || "",
+        lastModified: Date.now() 
+      };
+
+      // Gửi dữ liệu lên Realtime Database
+      await update(userRef, updates);
+      
+      alert("✅ ĐÃ LƯU VĨNH VIỄN THÀNH CÔNG!");
+      
+      // Xóa ảnh tạm sau khi lưu thành công
+      setPreviewImage(null);
+      setPreviewWallpaper(null);
+    } catch (error: any) {
+      console.error("Lỗi Firebase:", error);
+      alert(`❌ CHƯA LƯU ĐƯỢC: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8 animate-in fade-in duration-500">
