@@ -1,116 +1,102 @@
-import React, { useState } from 'react';
-import { Home, History, Shield, Book, Music, Zap, X, ChevronDown, Settings, ListMusic } from 'lucide-react';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Home, History, Shield, Monitor, Gamepad2, 
+  Music, Settings, LogOut, ChevronLeft, ChevronRight 
+} from 'lucide-react';
 
-const Sidebar = ({ isOpen, setIsOpen, onNavigate, activeTab }: any) => {
-  const [openSub, setOpenSub] = useState<string | null>(null);
+interface SidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+  currentUser: any;
+  appName: string;
+  appLogo: string;
+  onLogout: () => void;
+}
 
-  const handleNav = (id: string, sub?: string) => {
-    onNavigate(id, sub);
-    if (window.innerWidth < 1024) setIsOpen(false); // Tự đóng khi dùng điện thoại
-  };
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, currentUser, appName, appLogo, onLogout }) => {
+  const location = useLocation();
 
-  const toggleSub = (menuId: string) => {
-    setOpenSub(openSub === menuId ? null : menuId);
-  };
+  const menuItems = [
+    { path: '/', label: 'Trang chủ', icon: Home },
+    { path: '/history', label: 'Lịch sử QĐND VN', icon: History },
+    { path: '/tradition', label: 'Truyền thống đơn vị', icon: Shield },
+    { path: '/lectures', label: 'Bài giảng chính trị', icon: Monitor },
+    { path: '/entertainment', label: 'Góc Giải trí', icon: Music },
+    { path: '/game', label: 'Chiến sĩ thông thái', icon: Gamepad2 },
+    { path: '/settings', label: 'Cài đặt hệ thống', icon: Settings },
+  ];
 
   return (
-    <>
-      {/* Overlay cho mobile */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[40] lg:hidden animate-in fade-in duration-300" onClick={() => setIsOpen(false)} />
-      )}
+    <aside className={`
+      relative bg-[#1A2E14] flex flex-col shadow-2xl transition-all duration-500 ease-in-out
+      ${isCollapsed ? 'w-20' : 'w-72'}
+    `}>
+      {/* NÚT TOGGLE: Dấu mũi tên thông minh */}
+      <button 
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-10 w-6 h-6 bg-[#DA251D] text-white rounded-full flex items-center justify-center shadow-lg border border-yellow-500 hover:scale-110 transition-transform z-50"
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
 
-      <aside className={`fixed inset-y-0 left-0 z-[50] w-72 sm:w-80 bg-[#1b3a1a] text-white transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} border-r-4 border-yellow-500 shadow-2xl flex flex-col`}>
-        
-        {/* Header với Logo VPA */}
-        <div className="p-6 bg-green-950 flex justify-between items-center border-b border-yellow-500/20">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-red-700 rounded-full border-2 border-yellow-400 flex items-center justify-center font-bold text-yellow-400 shadow-lg animate-pulse">VPA</div>
-            <span className="text-[11px] font-black uppercase leading-tight tracking-tighter">
-              Hệ thống sổ tay<br/><span className="text-yellow-400">GDCT điện tử</span>
-            </span>
-          </div>
-          <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-lg text-yellow-500 lg:hidden">
-            <X size={24} />
-          </button>
+      {/* LOGO ĐƠN VỊ */}
+      <div className={`p-6 border-b border-white/10 flex flex-col items-center ${isCollapsed ? 'px-2' : ''}`}>
+        <div className={`bg-white rounded-xl p-2 shadow-xl transition-all duration-500 ${isCollapsed ? 'w-10 h-10' : 'w-16 h-16 mb-3'}`}>
+           <img src={appLogo} alt="VPA Logo" className="w-full h-full object-contain" />
         </div>
+        {!isCollapsed && (
+          <h1 className="text-[13px] font-black text-[#FFD700] uppercase text-center leading-tight animate-in fade-in">
+            {appName}
+          </h1>
+        )}
+      </div>
 
-        {/* Danh sách Menu */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
-          
-          {/* TRANG CHỦ */}
-          <button onClick={() => handleNav('dashboard')} className={`w-full flex items-center gap-4 p-4 rounded-xl font-bold uppercase text-[11px] tracking-wider transition-all ${activeTab === 'dashboard' ? 'bg-yellow-500 text-green-950 shadow-inner' : 'hover:bg-green-800'}`}>
-            <Home size={18} /> Trang chủ
-          </button>
+      {/* DANH SÁCH MENU */}
+      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              title={isCollapsed ? item.label : ""}
+              className={`
+                flex items-center gap-4 py-3 rounded-xl font-bold transition-all
+                ${isActive ? 'bg-[#DA251D] text-white shadow-lg' : 'text-white/60 hover:bg-white/10 hover:text-white'}
+                ${isCollapsed ? 'justify-center px-0' : 'px-4'}
+              `}
+            >
+              <Icon size={22} className={isActive ? 'text-[#FFD700]' : ''} />
+              {!isCollapsed && <span className="text-[13px] uppercase tracking-wide truncate">{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
 
-          {/* LỊCH SỬ QĐND VN */}
-          <button onClick={() => handleNav('history-vn')} className={`w-full flex items-center gap-4 p-4 rounded-xl font-bold uppercase text-[11px] tracking-wider transition-all ${activeTab === 'history-vn' ? 'bg-yellow-500 text-green-950' : 'hover:bg-green-800'}`}>
-            <History size={18} /> Lịch sử QĐND VN
-          </button>
-
-          {/* LỊCH SỬ TRUYỀN THỐNG ĐƠN VỊ (Cấp con) */}
-          <div className="space-y-1">
-            <button onClick={() => toggleSub('tradition')} className="w-full flex items-center justify-between p-4 rounded-xl font-bold uppercase text-[11px] hover:bg-green-800 transition-colors">
-              <span className="flex items-center gap-4"><Shield size={18} /> Truyền thống đơn vị</span>
-              <ChevronDown size={14} className={`transition-transform ${openSub === 'tradition' ? 'rotate-180' : ''}`} />
-            </button>
-            {openSub === 'tradition' && (
-              <div className="pl-10 space-y-1 bg-black/20 rounded-xl py-2 animate-in slide-in-from-top-2">
-                {['LLVT Thủ đô', 'Sư đoàn BB 301', 'Trung đoàn BB 59', 'Trung đoàn BB 692', 'Trung đoàn BB 757'].map((unit) => (
-                  <button key={unit} onClick={() => handleNav(`tradition-${unit}`)} className="w-full text-left py-2.5 px-3 text-[10px] font-bold text-white/70 hover:text-yellow-400 uppercase tracking-tighter italic border-l border-white/10 ml-2">• {unit}</button>
-                ))}
-              </div>
-            )}
+      {/* USER & LOGOUT */}
+      <div className={`p-4 bg-black/20 border-t border-white/10 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+        {!isCollapsed && (
+          <div className="flex items-center gap-3 mb-4 animate-in fade-in">
+            <div className="w-10 h-10 rounded-lg border border-[#FFD700] overflow-hidden bg-white shrink-0">
+              <img src={currentUser.avatarUrl} alt="User" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-bold text-white truncate">{currentUser.username}</span>
+              <span className="text-[9px] text-[#FFD700] uppercase font-black">{currentUser.role}</span>
+            </div>
           </div>
-
-          {/* BÀI GIẢNG CHÍNH TRỊ (Cấp con) */}
-          <div className="space-y-1">
-            <button onClick={() => toggleSub('lectures')} className="w-full flex items-center justify-between p-4 rounded-xl font-bold uppercase text-[11px] hover:bg-green-800 transition-colors">
-              <span className="flex items-center gap-4"><Book size={18} /> Bài giảng chính trị</span>
-              <ChevronDown size={14} className={`transition-transform ${openSub === 'lectures' ? 'rotate-180' : ''}`} />
-            </button>
-            {openSub === 'lectures' && (
-              <div className="pl-10 space-y-1 bg-black/20 rounded-xl py-2">
-                <button onClick={() => handleNav('lectures-csm')} className="w-full text-left py-2.5 px-3 text-[10px] font-bold text-white/70 hover:text-yellow-400 uppercase">• Chiến sĩ mới (6 bài)</button>
-                <button onClick={() => handleNav('lectures-hsq')} className="w-full text-left py-2.5 px-3 text-[10px] font-bold text-white/70 hover:text-yellow-400 uppercase">• HSQ-CS (12 bài)</button>
-              </div>
-            )}
-          </div>
-
-          {/* GÓC GIẢI TRÍ (Cấp con) */}
-          <div className="space-y-1">
-            <button onClick={() => toggleSub('entertainment')} className="w-full flex items-center justify-between p-4 rounded-xl font-bold uppercase text-[11px] hover:bg-green-800 transition-colors">
-              <span className="flex items-center gap-4"><Music size={18} /> Góc giải trí</span>
-              <ChevronDown size={14} className={`transition-transform ${openSub === 'entertainment' ? 'rotate-180' : ''}`} />
-            </button>
-            {openSub === 'entertainment' && (
-              <div className="pl-10 space-y-1 bg-black/20 rounded-xl py-2">
-                <button onClick={() => handleNav('music-15')} className="w-full text-left py-2.5 px-3 text-[10px] font-bold text-white/70 hover:text-yellow-400 uppercase">• 15 Bài hát quy định</button>
-                <button onClick={() => handleNav('dance-5')} className="w-full text-left py-2.5 px-3 text-[10px] font-bold text-white/70 hover:text-yellow-400 uppercase">• 5 Điệu vũ cơ bản</button>
-              </div>
-            )}
-          </div>
-
-          {/* CHIẾN SĨ THÔNG THÁI */}
-          <button onClick={() => handleNav('wise-soldier')} className={`w-full flex items-center gap-4 p-4 rounded-xl font-bold uppercase text-[11px] tracking-wider transition-all ${activeTab === 'wise-soldier' ? 'bg-yellow-500 text-green-950' : 'hover:bg-green-800'}`}>
-            <Zap size={18} /> Chiến sĩ thông thái
-          </button>
-
-          {/* TRANG CÀI ĐẶT (Mới thêm) */}
-          <button onClick={() => handleNav('settings')} className={`w-full flex items-center gap-4 p-4 rounded-xl font-bold uppercase text-[11px] tracking-wider border-t border-white/5 mt-4 transition-all ${activeTab === 'settings' ? 'bg-white/20 text-yellow-400' : 'text-white/40 hover:bg-green-800'}`}>
-            <Settings size={18} /> Cài đặt hệ thống
-          </button>
-
-        </nav>
-
-        {/* Footer Bản quyền */}
-        <div className="p-6 bg-green-950 text-center border-t border-yellow-500/20">
-          <p className="text-[9px] text-yellow-500/50 uppercase font-black italic tracking-widest leading-relaxed">
-            Bản quyền thuộc về<br/>Cục Chính trị - BTL Thủ đô
-          </p>
-        </div>
-      </aside>
-    </>
+        )}
+        <button 
+          onClick={onLogout}
+          className={`flex items-center justify-center gap-2 transition-all ${isCollapsed ? 'text-red-500' : 'w-full py-2.5 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg border border-red-600/30 text-xs font-black uppercase'}`}
+        >
+          <LogOut size={18} />
+          {!isCollapsed && "Đăng xuất"}
+        </button>
+      </div>
+    </aside>
   );
 };
 
